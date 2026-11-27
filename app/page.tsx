@@ -9,7 +9,7 @@ import { Copy, Menu, Moon, Plus, Send, Settings2, Sun, Square, Trash2, Pencil, X
 type Message = { role: "user" | "assistant"; content: string };
 type Chat = { id: string; title: string; messages: Message[]; updatedAt: number };
 const DEFAULT_PROMPT = "Sen Javy'san, foydalanuvchi qaysi tilda yozsa, shu tilda (ayniqsa o'zbek tilida) aniq va do'stona javob ber";
-const MODELS = ["llama-3.3-70b-versatile","llama-3.1-8b-instant","openai/gpt-oss-120b","openai/gpt-oss-20b","qwen/qwen3-32b","meta-llama/llama-4-scout-17b-16e-instruct"];
+const MODELS = ["openai/gpt-oss-120b","openai/gpt-oss-20b","llama-3.3-70b-versatile","llama-3.1-8b-instant","qwen/qwen3.8-27b"];
 const uid = () => Math.random().toString(36).slice(2, 10);
 const suggestions = ["Next.js nima va u qanday ishlaydi?","Menga haftalik o'qish rejasini tuzib ber","Python'da oddiy kalkulyator yoz","Sun'iy intellektni sodda tushuntir"];
 
@@ -37,7 +37,7 @@ export default function Home() {
       const parsed: Chat[] = saved ? JSON.parse(saved) : [];
       setChats(parsed); if(parsed.length) setActiveId(parsed[0].id);
       const t = localStorage.getItem("javy-theme") || "system"; setTheme(t);
-      setModel(localStorage.getItem("javy-model") || MODELS[0]);
+      setModel(MODELS.includes(localStorage.getItem("javy-model") || "") ? (localStorage.getItem("javy-model") as string) : MODELS[0]);
       setTemperature(Number(localStorage.getItem("javy-temperature") || "0.7"));
       setPrompt(localStorage.getItem("javy-prompt") || DEFAULT_PROMPT);
     } catch {}
