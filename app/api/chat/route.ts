@@ -62,9 +62,9 @@ export const POST = monitoredApi("POST /api/chat", async (request, requestId) =>
         imageParts.push({ type: "image_url", image_url: { url: file.data } });
       } else if (file.type === "application/pdf") {
         const parsed = await pdf(buffer);
-        documentContext += "\\n\\nPDF: " + file.name + "\\n" + parsed.text.slice(0, 80_000);
+        documentContext += "\n\nPDF: " + file.name + "\n" + parsed.text.slice(0, 80_000);
       } else if (["text/plain","text/markdown","text/csv"].includes(file.type)) {
-        documentContext += "\\n\\nFayl: " + file.name + "\\n" + buffer.toString("utf8").slice(0, 80_000);
+        documentContext += "\n\nFayl: " + file.name + "\n" + buffer.toString("utf8").slice(0, 80_000);
       } else {
         throw new Error("Faqat JPG, PNG, WEBP, PDF, TXT, MD va CSV fayllari qo‘llab-quvvatlanadi.");
       }
@@ -76,16 +76,14 @@ export const POST = monitoredApi("POST /api/chat", async (request, requestId) =>
   const groqMessages = messages.map((message: any, index: number) => {
     if (index === messages.length - 1 && (imageParts.length || documentContext)) {
       return { role: message.role, content: [
-        { type: "text", text: message.content + (documentContext ? "\\n\\nBiriktirilgan hujjat matni quyida. Hujjatni tahlil qilib, foydalanuvchi savoliga javob ber:\\n" + documentContext : "") },
+        { type: "text", text: message.content + (documentContext ? "\n\nBiriktirilgan hujjat matni quyida. Hujjatni tahlil qilib, foydalanuvchi savoliga javob ber:\n" + documentContext : "") },
         ...imageParts,
       ] };
     }
     return { role: message.role, content: message.content };
   });
 
-  const model = typeof body.model === "string" && ALLOWED_MODELS.has(body.model)
-    ? body.model
-    : DEFAULT_MODEL;
+  const model = imageParts.length ? "qwen/qwen3.8-27b" : (typeof body.model === "string" && ALLOWED_MODELS.has(body.model) ? body.model : DEFAULT_MODEL);
   const customPrompt = typeof body.systemPrompt === "string"
     ? body.systemPrompt.slice(0, 4_000)
     : BASE_PROMPT;
