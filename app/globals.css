@@ -27,3 +27,20 @@ button{touch-action:manipulation}
 .prose img{max-width:100%;height:auto;border-radius:12px}
 :focus-visible{outline:2px solid #818cf8;outline-offset:2px}
 @media(max-width:640px){.prose pre{padding:12px;font-size:12px}.prose{font-size:14px}}
+
+/* Settings controls stay readable in both browser-native themes. */
+.settings-panel{max-height:min(88dvh,760px);overflow-y:auto;color:#1f2937;background:#fff}
+.dark .settings-panel{color:#f3f4f6;background:#202127;border-color:#373b45}
+.settings-control{color:#1f2937;background-color:#fff;color-scheme:light}
+.settings-control option{color:#1f2937;background:#fff}
+.dark .settings-control{color:#f3f4f6;background-color:#292c34;color-scheme:dark}
+.dark .settings-control option{color:#f3f4f6;background:#292c34}
+.settings-control:focus{outline:2px solid #818cf8;outline-offset:2px}
+.typing-indicator{display:inline-flex;align-items:center;gap:5px;min-height:24px;padding:4px 2px}
+.typing-indicator i{display:block;width:6px;height:6px;border-radius:999px;background:currentColor;opacity:.45;animation:javy-dot .65s ease-in-out infinite}
+.typing-indicator i:nth-child(2){animation-delay:.12s}
+.typing-indicator i:nth-child(3){animation-delay:.24s}
+.typing-cursor{display:inline-block;width:2px;height:1em;margin-left:3px;vertical-align:-.15em;background:currentColor;animation:javy-cursor .7s steps(2,start) infinite}
+@keyframes javy-dot{0%,60%,100%{transform:translateY(0);opacity:.35}30%{transform:translateY(-4px);opacity:1}}
+@keyframes javy-cursor{to{visibility:hidden}}
+@media(prefers-reduced-motion:reduce){.typing-indicator i,.typing-cursor{animation:none}}
