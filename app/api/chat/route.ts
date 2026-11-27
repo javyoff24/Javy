@@ -48,7 +48,7 @@ export const POST = monitoredApi("POST /api/chat", async (request, requestId) =>
   }
 
   // Keep UI-only metadata (for example `sources`) out of Groq chat messages.
-  if (attachments.length > 5 || !attachments.every((file: any) => file && typeof file.name === "string" && typeof file.type === "string" && typeof file.data === "string" && file.data.length <= 2_900_000)) {
+  if (attachments.length > 3 || !attachments.every((file: any) => file && typeof file.name === "string" && typeof file.type === "string" && typeof file.data === "string" && file.data.length <= 2_900_000)) {
     return Response.json({ error: "Fayllar formati noto‘g‘ri yoki hajmi juda katta. Har bir fayl 2 MB dan oshmasin (ko‘pi bilan 3 ta).", requestId }, { status: 400 });
   }
   let documentContext = "";
@@ -155,34 +155,16 @@ export const POST = monitoredApi("POST /api/chat", async (request, requestId) =>
       ...groqMessages,
     ];
     let completion: any;
-    let builtInSearchUsed = false;
-
-    if (searchRequested) {
-      // Always use Groq's live browser search for search-intent requests.
-      try {
-        completion = await groq.chat.completions.create({
-          model, temperature: 1, max_completion_tokens: 4096, reasoning_effort: "low",
-          stream: false, tool_choice: "required", tools: [{ type: "browser_search" }],
-          messages: [
-            { role: "system", content: customPrompt + "\n\n" + BASE_PROMPT + "\nInternetda faol qidiruv o'tkaz. Bir nechta ishonchli, imkon qadar birlamchi manbalarni tekshir va faktlarni solishtir. Faqat topilgan dalillarga tayan, hech narsa uydirma. Internetga kira olmaslik haqidagi eski yoki umumiy ogohlantirishlarni yozma. Texnik citation belgilarini va alohida manbalar ro'yxatini javob matniga yozma; manbalar interfeysda ko'rsatiladi." },
-            ...(searchContext ? [{ role: "system" as const, content: searchContext }] : []),
-            ...groqMessages,
-          ],
-        } as any);
-        builtInSearchUsed = true;
-      } catch (browserError) {
-        console.error(JSON.stringify({ type: "javy_browser_search_error", requestId, message: browserError instanceof Error ? browserError.message.slice(0, 500) : String(browserError).slice(0, 500) }));
-        if (searchResults.length || imageResults.length) {
-          completion = await groq.chat.completions.create({ model, temperature: 1, max_completion_tokens: 4096, reasoning_effort: "low", stream: false, messages: baseMessages } as any);
-        } else {
-          throw browserError;
-        }
-      }
-    } else {
-      completion = await groq.chat.completions.create({
-        model, temperature: 1, max_completion_tokens: 4096, reasoning_effort: "low", stream: false, messages: baseMessages,
-      } as any);
-    }
+    // Use our own web-search results as context. Never force Groq tool invocation:
+    // GPT-OSS may answer without calling a tool, which causes tool_use_failed (400).
+    completion = await groq.chat.completions.create({
+      model,
+      temperature: 1,
+      max_completion_tokens: 4096,
+      reasoning_effort: "low",
+      stream: false,
+      messages: baseMessages,
+    } as any);
 
     const assistantMessage: any = completion.choices?.[0]?.message ?? {};
     const content = assistantMessage.content;
@@ -217,8 +199,8 @@ export const POST = monitoredApi("POST /api/chat", async (request, requestId) =>
         sources,
         images: imageResults,
         searchAttempted: searchRequested,
-        searchUsed: sources.length > 0 || imageResults.length > 0 || builtInSearchUsed,
-        searchFailed: searchRequested && sources.length === 0 && imageResults.length === 0 && !builtInSearchUsed,
+        searchUsed: sources.length > 0 || imageResults.length > 0,
+        searchFailed: searchRequested && sources.length === 0 && imageResults.length === 0,
         requestId,
       },
       { headers: { "Cache-Control": "no-store", "X-Content-Type-Options": "nosniff" } },
