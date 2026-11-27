@@ -76,3 +76,45 @@ html{scroll-behavior:smooth}
 .prose .web-image-card img{display:block;width:100%;max-height:230px;object-fit:cover;border-radius:13px}
 .prose .web-image-caption{display:block;padding:6px 10px;font-size:.72rem;line-height:1.4;color:#64748b}
 .dark .prose .web-image-caption{color:#94a3b8}
+
+
+/* Consistent Markdown rendering inside every message bubble/card. */
+.markdown-content{min-width:0;color:inherit;font-size:.925rem;line-height:1.75;overflow-wrap:anywhere}
+.markdown-content>*:first-child{margin-top:0}
+.markdown-content>*:last-child{margin-bottom:0}
+.markdown-content strong{font-weight:700;color:inherit}
+.markdown-content em{font-style:italic}
+.markdown-content del{text-decoration:line-through;opacity:.75}
+.markdown-content h1,.markdown-content h2,.markdown-content h3,.markdown-content h4{font-weight:700;line-height:1.35;letter-spacing:-.02em;color:inherit}
+.markdown-content h1{font-size:1.55rem;margin:1.35em 0 .55em}
+.markdown-content h2{font-size:1.3rem;margin:1.25em 0 .5em}
+.markdown-content h3{font-size:1.12rem;margin:1.15em 0 .45em}
+.markdown-content p{margin:.7em 0;line-height:1.8}
+.markdown-content ul,.markdown-content ol{display:block;margin:.8em 0;padding-left:1.6rem}
+.markdown-content ul{list-style:disc}
+.markdown-content ol{list-style:decimal}
+.markdown-content li{display:list-item;margin:.3em 0;padding-left:.15rem}
+.markdown-content li::marker{color:#818cf8}
+.markdown-content blockquote{margin:1rem 0;border-left:3px solid #818cf8;border-radius:0 10px 10px 0;background:rgba(129,140,248,.08);padding:.65rem 1rem;color:inherit}
+.markdown-content hr{height:1px;border:0;background:var(--line);margin:1.4rem 0}
+.markdown-content table{width:100%;margin:1rem 0}
+.markdown-content th{font-weight:700;text-align:left}
+.markdown-content td,.markdown-content th{overflow-wrap:anywhere}
+.markdown-content input[type=checkbox]{margin-right:.45rem;accent-color:#6366f1}
+.markdown-content pre{margin:1rem 0;white-space:pre;tab-size:2}
+.markdown-content :not(pre)>code{font-family:ui-monospace,SFMono-Regular,Menlo,monospace}
+.markdown-content a:not(.web-image-card){text-underline-offset:3px}
+.markdown-content .web-image-card{display:block}
+.dark .markdown-content{color:#e5e7eb}
+.dark .markdown-content blockquote{background:rgba(129,140,248,.1)}
+/* Center the composer controls and give the send action a clear visual anchor. */
+.composer-shell{min-height:58px}
+.composer-action,.send-action{align-self:center;flex:none}
+.send-action:not(:disabled){background:linear-gradient(145deg,#3b82f6,#2563eb);box-shadow:0 4px 12px rgba(37,99,235,.22)}
+.dark .send-action:not(:disabled){background:linear-gradient(145deg,#60a5fa,#2563eb);box-shadow:0 4px 16px rgba(37,99,235,.28)}
+.send-action:disabled{cursor:not-allowed}
+.animate-fade-in{animation:message-enter .28s cubic-bezier(.2,.75,.25,1) both}
+@keyframes message-enter{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:translateY(0)}}
+.settings-panel,.fixed.z-\\[60\\]>.flex{animation:modal-enter .2s ease-out both}
+@keyframes modal-enter{from{opacity:0;transform:translateY(8px) scale(.985)}to{opacity:1;transform:translateY(0) scale(1)}}
+@media(prefers-reduced-motion:reduce){.animate-fade-in,.settings-panel,.fixed.z-\\[60\\]>.flex{animation:none}.send-action{transition:none}}
