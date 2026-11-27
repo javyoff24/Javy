@@ -93,19 +93,9 @@ export const POST = monitoredApi("POST /api/chat", async (request, requestId) =>
     let completion: any;
     let builtInSearchUsed = false;
 
-    try {
-      completion = await groq.chat.completions.create({
-        model,
-        temperature: 1,
-        max_completion_tokens: 4096,
-        reasoning_effort: "low",
-        stream: false,
-        messages: baseMessages,
-      } as any);
-    } catch (primaryError: any) {
-      // If a normal completion fails, surface its real error. Browser search is only a
-      // fallback when DuckDuckGo could not return results for a time-sensitive request.
-      if (!searchRequested || searchResults.length > 0) throw primaryError;
+    if (searchRequested && searchResults.length === 0) {
+      // DuckDuckGo can be rate-limited by its public HTML endpoint. In that case,
+      // use Groq's documented built-in browser_search tool as a second provider.
       completion = await groq.chat.completions.create({
         model,
         temperature: 1,
@@ -120,6 +110,15 @@ export const POST = monitoredApi("POST /api/chat", async (request, requestId) =>
         ],
       } as any);
       builtInSearchUsed = true;
+    } else {
+      completion = await groq.chat.completions.create({
+        model,
+        temperature: 1,
+        max_completion_tokens: 4096,
+        reasoning_effort: "low",
+        stream: false,
+        messages: baseMessages,
+      } as any);
     }
 
     const assistantMessage: any = completion.choices?.[0]?.message ?? {};
