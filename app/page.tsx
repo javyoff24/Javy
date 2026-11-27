@@ -78,7 +78,7 @@ export default function Home() {
       
       const searchWarning=data.searchFailed?"\n\n*Internet qidiruvi hozircha natija bermadi. Eng yangi ma'lumotlar tasdiqlanmagan bo'lishi mumkin.*":"";
       const fullAnswer=cleanAssistantText(answer)+searchWarning;
-      updateChat(id,c=>({...c,messages:c.messages.map((m,i)=>i===c.messages.length-1?{...m,content:fullAnswer,sources:sources.filter((s:any)=>typeof s.url==="string"&&/^https?:\/\//i.test(s.url)).map((s:any)=>({title:s.title||s.domain||"Manba",url:s.url,domain:s.domain||new URL(s.url).hostname.replace(/^www\./,"")}))}:m),updatedAt:Date.now()}));
+      updateChat(id,c=>({...c,messages:c.messages.map((m,i)=>i===c.messages.length-1?{...m,content:fullAnswer,sources:sources.filter((s:any)=>typeof s.url==="string"&&/^https?:\/\//i.test(s.url)).map((s:any)=>({title:s.title||s.domain||"Manba",url:s.url,domain:s.domain||new URL(s.url).hostname.replace(/^www\./,"")})),images}:m),updatedAt:Date.now()}));
     } catch(e:any) { if(e.name!=="AbortError"){setError(e.message||"Tarmoq xatosi.");} }
     finally {setBusy(false);setSearching(false);abortRef.current=null;}
   }
