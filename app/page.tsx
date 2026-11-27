@@ -75,7 +75,8 @@ export default function Home() {
       const sources=Array.isArray(data.sources)?data.sources:[];
       const images=Array.isArray(data.images)?data.images.filter((image:any)=>typeof image.imageUrl==="string"&&/^https?:\/\//i.test(image.imageUrl)):[];
       
-      const fullAnswer=cleanAssistantText(answer);      updateChat(id,c=>({...c,messages:c.messages.map((m,i)=>i===c.messages.length-1?{...m,content:fullAnswer,sources:sources.filter((s:any)=>typeof s.url==="string"&&/^https?:\/\//i.test(s.url)).map((s:any)=>({title:s.title||s.domain||"Manba",url:s.url,domain:s.domain||new URL(s.url).hostname.replace(/^www\./,"")})),images}:m),updatedAt:Date.now()}));
+      const fullAnswer=cleanAssistantText(answer);
+      updateChat(id,c=>({...c,messages:c.messages.map((m,i)=>i===c.messages.length-1?{...m,content:fullAnswer,sources:sources.filter((s:any)=>typeof s.url==="string"&&/^https?:\/\//i.test(s.url)).map((s:any)=>({title:s.title||s.domain||"Manba",url:s.url,domain:s.domain||new URL(s.url).hostname.replace(/^www\./,"")})),images}:m),updatedAt:Date.now()}));
     } catch(e:any) { if(e.name!=="AbortError"){setError(e.message||"Tarmoq xatosi.");} }
     finally {setBusy(false);abortRef.current=null;}
   }
