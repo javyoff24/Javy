@@ -15,10 +15,7 @@ const uid = () => Math.random().toString(36).slice(2, 10);
 const suggestions = ["Next.js nima va u qanday ishlaydi?","Menga haftalik o'qish rejasini tuzib ber","Python'da oddiy kalkulyator yoz","Sun'iy intellektni sodda tushuntir"];
 
 function cleanAssistantText(value: string) {
-  return value.replace(/【\s*\d+†L\d+(?:-L?\d+)?】/g, "").replace(/[ \t]{2,}/g, " ").replace(/
-{3,}/g, "
-
-").trim();
+  return value.replace(/【\s*\d+†L\d+(?:-L?\d+)?】/g, "").replace(/[ \t]{2,}/g, " ").replace(/\n{3,}/g, "\n\n").trim();
 }
 
 export default function Home() {
