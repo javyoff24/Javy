@@ -143,12 +143,18 @@ export const POST = monitoredApi("POST /api/chat", async (request, requestId) =>
           }];
         })
       : [];
-    const sources = searchResults.length ? searchResults : citationSources;
+    const imageSources = imageResults
+      .filter((item) => typeof item.sourceUrl === "string" && /^https?:\\/\\//i.test(item.sourceUrl))
+      .map((item) => ({ title: item.title || item.domain || "Rasm manbasi", url: item.sourceUrl, domain: item.domain || new URL(item.sourceUrl).hostname.replace(/^www\\./, "") }));
+    const sources = [...searchResults, ...citationSources, ...imageSources].filter((item, index, all) =>
+      all.findIndex((candidate) => candidate.url === item.url) === index
+    );
 
     return Response.json(
       {
         content,
         sources,
+        images: imageResults,
         searchAttempted: searchRequested,
         searchUsed: sources.length > 0 || imageResults.length > 0 || builtInSearchUsed,
         searchFailed: searchRequested && sources.length === 0 && imageResults.length === 0 && !builtInSearchUsed,
