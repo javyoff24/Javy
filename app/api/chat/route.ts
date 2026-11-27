@@ -78,13 +78,13 @@ export const POST = monitoredApi("POST /api/chat", async (request, requestId) =>
       const textContent = message.content + (documentContext ? "\n\nBiriktirilgan hujjat matni quyida. Hujjatni tahlil qilib, foydalanuvchi savoliga javob ber:\n" + documentContext : "");
       return {
         role: message.role,
-        content: imageParts.length ? [{ type: "text", text: textContent }, ...imageParts] : textContent,
+        content: textContent,
       };
     }
     return { role: message.role, content: message.content };
   });
 
-  const model = imageParts.length ? "qwen/qwen3.8-27b" : (typeof body.model === "string" && ALLOWED_MODELS.has(body.model) ? body.model : DEFAULT_MODEL);
+  const model = typeof body.model === "string" && ALLOWED_MODELS.has(body.model) ? body.model : DEFAULT_MODEL;
   const customPrompt = typeof body.systemPrompt === "string"
     ? body.systemPrompt.slice(0, 4_000)
     : BASE_PROMPT;
@@ -132,6 +132,23 @@ export const POST = monitoredApi("POST /api/chat", async (request, requestId) =>
 
   const groq = new Groq({ apiKey, timeout: 45_000, maxRetries: 1 });
   try {
+    let imageAnalysis = "";
+    if (imageParts.length) {
+      const vision = await groq.chat.completions.create({
+        model: "qwen/qwen3.8-27b",
+        temperature: 0.2,
+        max_completion_tokens: 1200,
+        stream: false,
+        messages: [{ role: "user", content: [
+          { type: "text", text: "Ushbu rasm(lar)ni diqqat bilan tahlil qil. Ko‘rinayotgan obyektlar, matnlar, diagrammalar, muhim tafsilotlar va noaniqliklarni o‘zbek tilida aniq tasvirla. Faqat ko‘rganingni yoz." },
+          ...imageParts,
+        ] }],
+      } as any);
+      imageAnalysis = String(vision.choices?.[0]?.message?.content || "");
+      if (!imageAnalysis.trim()) throw new Error("Rasm tahlilidan javob olinmadi.");
+      const last = groqMessages[groqMessages.length - 1];
+      if (last?.role === "user") last.content += "\n\nRasmni ko‘rish modeli bergan tahlil (shu ma’lumot asosida foydalanuvchiga javob ber):\n" + imageAnalysis;
+    }
     const baseMessages = [
       { role: "system" as const, content: customPrompt + "\n\n" + BASE_PROMPT + "\nDoim rostgo'y bo'l. Bilmagan narsangni aniq deb ko'rsatma." },
       ...(searchContext ? [{ role: "system" as const, content: searchContext }] : []),
