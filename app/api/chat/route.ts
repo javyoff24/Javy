@@ -48,8 +48,8 @@ export const POST = monitoredApi("POST /api/chat", async (request, requestId) =>
   }
 
   // Keep UI-only metadata (for example `sources`) out of Groq chat messages.
-  if (attachments.length > 5 || !attachments.every((file: any) => file && typeof file.name === "string" && typeof file.type === "string" && typeof file.data === "string" && file.data.length <= 11_000_000)) {
-    return Response.json({ error: "Fayllar formati noto‘g‘ri yoki hajmi juda katta. Har bir fayl 8 MB dan oshmasin (ko‘pi bilan 5 ta).", requestId }, { status: 400 });
+  if (attachments.length > 5 || !attachments.every((file: any) => file && typeof file.name === "string" && typeof file.type === "string" && typeof file.data === "string" && file.data.length <= 2_900_000)) {
+    return Response.json({ error: "Fayllar formati noto‘g‘ri yoki hajmi juda katta. Har bir fayl 2 MB dan oshmasin (ko‘pi bilan 3 ta).", requestId }, { status: 400 });
   }
   let documentContext = "";
   const imageParts: any[] = [];
