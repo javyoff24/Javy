@@ -118,7 +118,7 @@ export const POST = monitoredApi("POST /api/chat", async (request, requestId) =>
         tool_choice: "required",
         tools: [{ type: "browser_search" }],
         messages: [
-          { role: "system", content: customPrompt + "\n\nInternet qidiruvi orqali hozirgi ma'lumotlarni top. Javobni foydalanuvchi tilida yoz. Texnik citation belgilarini yoki alohida Manbalar ro'yxatini javob matniga yozma; manbalar interfeysda alohida ko'rsatiladi. Oddiy ro'yxatlarni jadvalga aylantirma." },
+          { role: "system", content: customPrompt + "\n\n" + BASE_PROMPT + "\nInternet qidiruvi orqali hozirgi ma'lumotlarni top. Javobni foydalanuvchi tilida yoz. Texnik citation belgilarini yoki alohida Manbalar ro'yxatini javob matniga yozma; manbalar interfeysda alohida ko'rsatiladi. Oddiy ro'yxatlarni jadvalga aylantirma." },
           ...groqMessages,
         ],
       } as any);
