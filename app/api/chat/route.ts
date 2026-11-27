@@ -109,7 +109,7 @@ export const POST = monitoredApi("POST /api/chat", async (request, requestId) =>
         tools: [{ type: "browser_search" }],
         messages: [
           { role: "system", content: customPrompt + "\n\nInternet qidiruvi orqali hozirgi ma'lumotlarni top. Javobni foydalanuvchi tilida yoz va ishlatilgan manbalarni ko'rsat." },
-          ...messages,
+          ...groqMessages,
         ],
       } as any);
       builtInSearchUsed = true;
