@@ -115,6 +115,6 @@ html{scroll-behavior:smooth}
 .send-action:disabled{cursor:not-allowed}
 .animate-fade-in{animation:message-enter .28s cubic-bezier(.2,.75,.25,1) both}
 @keyframes message-enter{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:translateY(0)}}
-.settings-panel,.fixed.z-\\[60\\]>.flex{animation:modal-enter .2s ease-out both}
+.settings-panel,.viewer-modal{animation:modal-enter .2s ease-out both}
 @keyframes modal-enter{from{opacity:0;transform:translateY(8px) scale(.985)}to{opacity:1;transform:translateY(0) scale(1)}}
-@media(prefers-reduced-motion:reduce){.animate-fade-in,.settings-panel,.fixed.z-\\[60\\]>.flex{animation:none}.send-action{transition:none}}
+@media(prefers-reduced-motion:reduce){.animate-fade-in,.settings-panel,.viewer-modal{animation:none}.send-action{transition:none}}
