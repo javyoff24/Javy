@@ -23,6 +23,8 @@ export async function POST(req:NextRequest){
   const content=typeof message.content==="string"?message.content:"Kechirasiz, javob tayyorlab bo‘lmadi.";
   const executed=Array.isArray(message.executed_tools)?message.executed_tools:Array.isArray((completion as any).executed_tools)?(completion as any).executed_tools:[];
   const found=new Map<string,{title:string;url:string}>();
+  const annotations=Array.isArray(message.annotations)?message.annotations:[];
+  for(const annotation of annotations){const citation=annotation?.url_citation;if(typeof citation?.url==="string"&&/^https?:\/\//i.test(citation.url)){found.set(citation.url,{title:typeof citation.title==="string"&&citation.title?citation.title:new URL(citation.url).hostname,url:citation.url});}}
   for(const tool of executed){
    const items=[...(Array.isArray(tool.browser_results)?tool.browser_results:[]),...(Array.isArray(tool.search_results?.results)?tool.search_results.results:[])];
    for(const item of items){if(typeof item?.url==="string"&&/^https?:\/\//i.test(item.url)){found.set(item.url,{title:typeof item.title==="string"&&item.title?item.title:new URL(item.url).hostname,url:item.url});}}
