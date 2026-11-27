@@ -144,8 +144,8 @@ export const POST = monitoredApi("POST /api/chat", async (request, requestId) =>
         })
       : [];
     const imageSources = imageResults
-      .filter((item) => typeof item.sourceUrl === "string" && /^https?:\\/\\//i.test(item.sourceUrl))
-      .map((item) => ({ title: item.title || item.domain || "Rasm manbasi", url: item.sourceUrl, domain: item.domain || new URL(item.sourceUrl).hostname.replace(/^www\\./, "") }));
+      .filter((item) => typeof item.sourceUrl === "string" && /^https?:\/\//i.test(item.sourceUrl))
+      .map((item) => ({ title: item.title || item.domain || "Rasm manbasi", url: item.sourceUrl, domain: item.domain || new URL(item.sourceUrl).hostname.replace(/^www\./, "") }));
     const sources = [...searchResults, ...citationSources, ...imageSources].filter((item, index, all) =>
       all.findIndex((candidate) => candidate.url === item.url) === index
     );
