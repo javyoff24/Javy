@@ -1,16 +1,30 @@
+import Groq from "groq-sdk";
 import { monitoredApi } from "../../lib/api-monitor";
 
 export const runtime = "nodejs";
 
 export const GET = monitoredApi("GET /api/health", async () => {
-  const groqConfigured = Boolean(process.env.GROQ_API_KEY?.trim());
-  const healthy = groqConfigured;
+  const apiKey = process.env.GROQ_API_KEY?.trim();
+  let chatStatus: "connected" | "missing_api_key" | "unreachable" = "missing_api_key";
+
+  if (apiKey) {
+    try {
+      const groq = new Groq({ apiKey, timeout: 8_000, maxRetries: 0 });
+      await groq.models.list();
+      chatStatus = "connected";
+    } catch {
+      chatStatus = "unreachable";
+    }
+  }
+
+  const healthy = chatStatus === "connected";
   return Response.json(
     {
       status: healthy ? "ok" : "degraded",
       services: {
-        chat: groqConfigured ? "configured" : "missing_api_key",
+        chat: chatStatus,
         webSearch: "duckduckgo",
+        pdf: "server-side extraction enabled",
       },
       timestamp: new Date().toISOString(),
     },
