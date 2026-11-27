@@ -127,7 +127,7 @@ export const POST = monitoredApi("POST /api/chat", async (request, requestId) =>
         "Faqat qidiruv natijalari tasdiqlaydigan faktlarni ayt. Natijada yo'q o'yin nomi, reliz sanasi, platforma, reyting yoki xususiyatni uydirma. TOP ro'yxatni soxta nomlar bilan to'ldirma. Qisqa davomiy xabarlarda oldingi foydalanuvchi mavzusini davom ettir. Javobni foydalanuvchi tilida yoz. Oddiy ro'yxatlarni jadval qilma. Agar IMAGE SEARCH RESULTS berilgan bo'lsa, faqat mos rasm URLlarini ishlat; rasm URLlarini o'zgartirma yoki yangisini uydirma.",
       ].join("\n\n")
     : searchRequested
-      ? "Foydalanuvchi eng yangi ma'lumot so'radi, ammo hozir DuckDuckGo qidiruvi natija bermadi. Yangilik yoki joriy faktlarni o'zingdan to'qima; qidiruv ishlamaganini ochiq ayt."
+      ? "Foydalanuvchi eng yangi ma'lumot so'radi, ammo hozir hech bir qidiruv provayderi natija bermadi. Yangilik yoki joriy faktlarni o'zingdan to'qima; qidiruv ishlamaganini ochiq ayt."
       : "";
 
   const groq = new Groq({ apiKey, timeout: 45_000, maxRetries: 1 });
