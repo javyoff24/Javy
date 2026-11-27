@@ -75,6 +75,19 @@ function parseResults(html: string, limit: number): WebSearchResult[] {
     seen.add(url);
     if (results.length >= limit) break;
   }
+  if (results.length === 0) {
+    const links = html.matchAll(/<a\b(?=[^>]*class=["'][^"']*result__a)[^>]*href=["']([^"']+)["'][^>]*>([\s\S]*?)<\/a>/gi);
+    for (const match of links) {
+      const url = unwrapUrl(match[1]);
+      const title = cleanText(match[2]);
+      if (!url || !title || seen.has(url)) continue;
+      let domain = "";
+      try { domain = new URL(url).hostname.replace(/^www\./, ""); } catch {}
+      results.push({ title, url, snippet: "", domain });
+      seen.add(url);
+      if (results.length >= limit) break;
+    }
+  }
   return results;
 }
 
