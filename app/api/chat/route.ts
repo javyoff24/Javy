@@ -1,4 +1,5 @@
 import Groq from "groq-sdk";
+import pdf from "pdf-parse";
 import { checkRateLimit, monitoredApi } from "../../lib/api-monitor";
 import { searchImages, searchWeb, shouldSearchWeb } from "../../lib/internet-search";
 
@@ -33,6 +34,7 @@ export const POST = monitoredApi("POST /api/chat", async (request, requestId) =>
   }
 
   const messages = body?.messages;
+  const attachments = Array.isArray(body?.attachments) ? body.attachments : [];
   if (!Array.isArray(messages) || messages.length < 1 || messages.length > 50) {
     return Response.json({ error: "Xabarlar formati noto'g'ri.", requestId }, { status: 400 });
   }
@@ -46,7 +48,40 @@ export const POST = monitoredApi("POST /api/chat", async (request, requestId) =>
   }
 
   // Keep UI-only metadata (for example `sources`) out of Groq chat messages.
-  const groqMessages = messages.map((message: any) => ({ role: message.role, content: message.content }));
+  if (attachments.length > 5 || !attachments.every((file: any) => file && typeof file.name === "string" && typeof file.type === "string" && typeof file.data === "string" && file.data.length <= 11_000_000)) {
+    return Response.json({ error: "Fayllar formati noto‘g‘ri yoki hajmi juda katta. Har bir fayl 8 MB dan oshmasin (ko‘pi bilan 5 ta).", requestId }, { status: 400 });
+  }
+  let documentContext = "";
+  const imageParts: any[] = [];
+  try {
+    for (const file of attachments) {
+      const match = file.data.match(/^data:([^;,]+);base64,([\s\S]+)$/);
+      if (!match || match[1] !== file.type) throw new Error("Fayl ma’lumotlari noto‘g‘ri.");
+      const buffer = Buffer.from(match[2], "base64");
+      if (file.type.startsWith("image/") && ["image/jpeg","image/png","image/webp"].includes(file.type)) {
+        imageParts.push({ type: "image_url", image_url: { url: file.data } });
+      } else if (file.type === "application/pdf") {
+        const parsed = await pdf(buffer);
+        documentContext += "\\n\\nPDF: " + file.name + "\\n" + parsed.text.slice(0, 80_000);
+      } else if (["text/plain","text/markdown","text/csv"].includes(file.type)) {
+        documentContext += "\\n\\nFayl: " + file.name + "\\n" + buffer.toString("utf8").slice(0, 80_000);
+      } else {
+        throw new Error("Faqat JPG, PNG, WEBP, PDF, TXT, MD va CSV fayllari qo‘llab-quvvatlanadi.");
+      }
+    }
+  } catch (fileError: any) {
+    return Response.json({ error: fileError?.message || "Faylni o‘qib bo‘lmadi.", requestId }, { status: 400 });
+  }
+  if (imageParts.length > 3) return Response.json({ error: "Bir xabarda ko‘pi bilan 3 ta rasm yuboring.", requestId }, { status: 400 });
+  const groqMessages = messages.map((message: any, index: number) => {
+    if (index === messages.length - 1 && (imageParts.length || documentContext)) {
+      return { role: message.role, content: [
+        { type: "text", text: message.content + (documentContext ? "\\n\\nBiriktirilgan hujjat matni quyida. Hujjatni tahlil qilib, foydalanuvchi savoliga javob ber:\\n" + documentContext : "") },
+        ...imageParts,
+      ] };
+    }
+    return { role: message.role, content: message.content };
+  });
 
   const model = typeof body.model === "string" && ALLOWED_MODELS.has(body.model)
     ? body.model
@@ -61,7 +96,7 @@ export const POST = monitoredApi("POST /api/chat", async (request, requestId) =>
   const explicitSearchIntent = /internet|web search|search the web|qidir\w*|qid\w*/i.test(lastText);
   const shortFollowUp = lastText.split(/\s+/).filter(Boolean).length <= 6;
   const inheritsSearchTopic = Boolean(shortFollowUp && previousUserMessage?.content && shouldSearchWeb(previousUserMessage.content));
-  const searchRequested = Boolean(lastText && (shouldSearchWeb(lastText) || explicitSearchIntent || inheritsSearchTopic));
+  const searchRequested = Boolean(!attachments.length && lastText && (shouldSearchWeb(lastText) || explicitSearchIntent || inheritsSearchTopic));
   const searchQuery = explicitSearchIntent
     ? String(previousUserMessage?.content || lastText).trim()
     : inheritsSearchTopic
