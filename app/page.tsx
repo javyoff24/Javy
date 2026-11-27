@@ -70,7 +70,8 @@ export default function Home() {
       const answer=typeof data.content==="string"?data.content:"Javob olinmadi.";
       const sources=Array.isArray(data.sources)?data.sources:[];
       const sourceText=sources.length?"\n\n---\n\n**Manbalar**\n\n"+sources.map((s:any)=>"- ["+(s.title||s.domain||"Manba")+"]("+s.url+")").join("\n"):"";
-      const fullAnswer=answer+sourceText;
+      const searchWarning=data.searchFailed?"\n\n*Internet qidiruvi hozircha natija bermadi. Eng yangi ma'lumotlar tasdiqlanmagan bo'lishi mumkin.*":"";
+      const fullAnswer=answer+sourceText+searchWarning;
       updateChat(id,c=>({...c,messages:c.messages.map((m,i)=>i===c.messages.length-1?{...m,content:fullAnswer}:m),updatedAt:Date.now()}));
     } catch(e:any) { if(e.name!=="AbortError"){setError(e.message||"Tarmoq xatosi.");} }
     finally {setBusy(false);abortRef.current=null;}
