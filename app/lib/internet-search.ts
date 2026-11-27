@@ -92,8 +92,9 @@ function parseResults(html: string, limit: number): WebSearchResult[] {
 }
 
 export function shouldSearchWeb(message: string): boolean {
-  const text = message.toLocaleLowerCase("uz");
-  return /eng\s+so['’ʻʻ]?nggi|so['’ʻ]?nggi|oxirgi|yangilik|bugun|hozir|joriy|real[ -]?time|latest|breaking|today|current|recent|this week|right now|news|weather|ob[ -]?havo|valyuta|kursi?|exchange rate|stock price|narxi|narxlar|chiq\w*|qachon\s+chiq|chiqish\s+sanasi|rasman\s+chiq|release\s+date|released|internetdan|internetda|qidir\w*|qid\w*|web search|search the web|top\s+\d+|best\s+\d+|202[4-9]|20[3-9]\d|eng\s+yaxshi|eng\s+zo['’ʻ]?r|tavsiya|recommend|review|taqqosla|solishtir|ro['’ʻ]?yxat/i.test(text);
+  const text = message.toLocaleLowerCase("uz").trim();
+  if (!text || /^(salom|assalomu alaykum|rahmat|katta rahmat|ok|okay|xo'p|tushunarli|ha|yo'q)[!. ]*$/i.test(text)) return false;
+  return /eng\s+so['’ʻʻ]?nggi|so['’ʻ]?nggi|oxirgi|yangilik|bugun|hozir|joriy|real[ -]?time|latest|breaking|today|current|recent|this week|right now|news|weather|ob[ -]?havo|valyuta|kursi?|exchange rate|stock price|narxi|narxlar|chiq\w*|qachon\s+chiq|chiqish\s+sanasi|rasman\s+chiq|release\s+date|released|internetdan|internetda|qidir\w*|qid\w*|web search|search the web|top\s+\d+|best\s+\d+|202[4-9]|20[3-9]\d|eng\s+yaxshi|eng\s+zo['’ʻ]?r|tavsiya|recommend|review|taqqosla|solishtir|ro['’ʻ]?yxat|kim\b|nima\b|qanday\b|qayer\w*|qachon\b|necha\b|qancha\b|haqida\b|ma['’ʻ]?lumot|tarix\w*|what\b|who\b|where\b|when\b|why\b|how\b|tell me about|explain\b|define\b|population\b|capital\b|history\b|facts\b|price\b|cost\b|specs\b|version\b/i.test(text);
 }}
 
 export async function searchImages(query: string, limit = 8): Promise<WebImageResult[]> {
