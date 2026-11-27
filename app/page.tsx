@@ -66,7 +66,7 @@ export default function Home() {
     const prior=retry?chat.messages.slice(0,-1):chat.messages;
     const next=retry?prior:[...prior,{role:"user" as const,content:value}];
     updateChat(id,c=>({...c,title:c.messages.length===0?value.slice(0,42)+(value.length>42?"…": ""):c.title,messages:[...next,{role:"assistant",content:""}],updatedAt:Date.now()}));
-    setInput("");if(inputRef.current)inputRef.current.style.height="42px";setError("");setSearching(/eng\s+so['’ʻ]?nggi|so['’ʻ]?nggi|yangilik|bugun|hozir|latest|today|news|weather|internetdan qidir|internetda top|top\s+\d+|best\s+\d+|eng\s+yaxshi|eng\s+zo['’ʻ]?r|tavsiya|recommend|review|taqqosla|solishtir/i.test(value));setBusy(true);
+    setInput("");if(inputRef.current)inputRef.current.style.height="42px";setError("");setSearching(/eng\s+so['’ʻ]?nggi|so['’ʻ]?nggi|yangilik|bugun|hozir|latest|today|news|weather|chiqdimi|chiqdi|chiqadimi|chiqqan|qachon\s+chiq|chiqish\s+sanasi|rasman\s+chiq|release\s+date|released|internetdan qidir|internetda top|top\s+\d+|best\s+\d+|eng\s+yaxshi|eng\s+zo['’ʻ]?r|tavsiya|recommend|review|taqqosla|solishtir/i.test(value));setBusy(true);
     const controller=new AbortController();abortRef.current=controller;
     try {
       const response=await fetch("/api/chat",{method:"POST",headers:{"Content-Type":"application/json"},signal:controller.signal,body:JSON.stringify({messages:next,model,systemPrompt:prompt})});
