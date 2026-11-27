@@ -147,7 +147,7 @@ export default function Home() {
     const filePayload = await Promise.all(pickedFiles.map(async file=>({name:file.name,type:file.type,size:file.size,data:await new Promise<string>((resolve,reject)=>{const reader=new FileReader();reader.onload=()=>resolve(String(reader.result));reader.onerror=()=>reject(new Error("Faylni o‘qib bo‘lmadi."));reader.readAsDataURL(file);})})));
     const next=retry?prior:[...prior,{role:"user" as const,content:value || "Iltimos, biriktirilgan fayl(lar)ni tahlil qil.",...(filePayload.length?{attachments:filePayload}: {})}];
     updateChat(id,c=>({...c,title:c.messages.length===0?value.slice(0,42)+(value.length>42?"…": ""):c.title,messages:[...next,{role:"assistant",content:""}],updatedAt:Date.now()}));
-    setInput("");setFiles([]);if(inputRef.current)inputRef.current.style.height="42px";setError("");setBusy(true);const expectsSearch=/internet|web\\s+search|search the web|qidir\\w*|qid\\w*|izla\\w*|topib\\s+ber|latest|today|news|yangilik|bugun|hozir|qachon|qayer|qancha|kim\\b|nima\\b|qanday|\\?|202[4-9]|20[3-9]\\d/i.test(value);setSearching(expectsSearch);
+    setInput("");setFiles([]);if(inputRef.current)inputRef.current.style.height="42px";setError("");setBusy(true);const expectsSearch=/internet|web\s+search|search the web|qidir\w*|qid\w*|izla\w*|topib\s+ber|latest|today|news|yangilik|bugun|hozir|qachon|qayer|qancha|kim\b|nima\b|qanday|\?|202[4-9]|20[3-9]\d/i.test(value);setSearching(expectsSearch);
     const controller=new AbortController();abortRef.current=controller;
     try {
       const response=await fetch("/api/chat",{method:"POST",headers:{"Content-Type":"application/json"},signal:controller.signal,body:JSON.stringify({messages:next.map((m:any)=>({role:m.role,content:m.content})),attachments:filePayload,model,systemPrompt:prompt})});
@@ -158,7 +158,7 @@ export default function Home() {
       const images=Array.isArray(data.images)?data.images.filter((image:any)=>typeof image.imageUrl==="string"&&/^https?:\/\//i.test(image.imageUrl)):[];
       
       const fullAnswer=cleanAssistantText(answer);
-      updateChat(id,c=>({...c,messages:c.messages.map((m,i)=>i===c.messages.length-1?{...m,content:fullAnswer,sources:sources.filter((s:any)=>typeof s.url==="string"&&/^https?:\/\//i.test(s.url)).map((s:any)=>({title:s.title||s.domain||"Manba",url:s.url,domain:s.domain||new URL(s.url).hostname.replace(/^www\./,"")})),images}:m),updatedAt:Date.now()}));
+      updateChat(id,c=>({...c,messages:c.messages.map((m,i)=>i===c.messages.length-1?{...m,content:fullAnswer,sources:sources.filter((s:any)=>typeof s.url==="string"&&/^https?:\/\//i.test(s.url)).map((s:any)=>({title:s.title||s.domain||"Manba",url:s.url,domain:s.domain||new URL(s.url).hostname.replace(/^www\./,"")})),images,searchStatus:data.searchAttempted?(data.searchFailed?"failed":"success"):undefined}:m),updatedAt:Date.now()}));
     } catch(e:any) { if(e.name!=="AbortError"){setError(e.message||"Tarmoq xatosi.");} }
     finally {setBusy(false);setSearching(false);abortRef.current=null;}
   }
