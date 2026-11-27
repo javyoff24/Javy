@@ -113,7 +113,7 @@ export const POST = monitoredApi("POST /api/chat", async (request, requestId) =>
           model, temperature: 1, max_completion_tokens: 4096, reasoning_effort: "low",
           stream: false, tool_choice: "required", tools: [{ type: "browser_search" }],
           messages: [
-            { role: "system", content: customPrompt + "\\n\\n" + BASE_PROMPT + "\\nInternetda faol qidiruv o'tkaz. Bir nechta ishonchli, imkon qadar birlamchi manbalarni tekshir va faktlarni solishtir. Faqat topilgan dalillarga tayan, hech narsa uydirma. Internetga kira olmaslik haqidagi eski yoki umumiy ogohlantirishlarni yozma. Texnik citation belgilarini va alohida manbalar ro'yxatini javob matniga yozma; manbalar interfeysda ko'rsatiladi." },
+            { role: "system", content: customPrompt + "\n\n" + BASE_PROMPT + "\nInternetda faol qidiruv o'tkaz. Bir nechta ishonchli, imkon qadar birlamchi manbalarni tekshir va faktlarni solishtir. Faqat topilgan dalillarga tayan, hech narsa uydirma. Internetga kira olmaslik haqidagi eski yoki umumiy ogohlantirishlarni yozma. Texnik citation belgilarini va alohida manbalar ro'yxatini javob matniga yozma; manbalar interfeysda ko'rsatiladi." },
             ...(searchContext ? [{ role: "system" as const, content: searchContext }] : []),
             ...groqMessages,
           ],
