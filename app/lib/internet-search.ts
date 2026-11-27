@@ -97,16 +97,15 @@ export function shouldSearchWeb(message: string): boolean {
 
   // Search explicit requests, current information, factual questions and research intents
   // across Uzbek, Russian and English. Keep casual greetings/acknowledgements local.
-  const searchIntent = /internetdan|internetda|webdan|saytdan|google(da)?|qidir\\w*|qid\\w*|izla\\w*|izlab ber|topib ber|top\\w*|tekshir\\w*|aniqla\\w*|surishtir\\w*|manba\\w*|havola\\w*|link(lar)?|source(s)?|search|look\\s*up|find\\s+out|verify|fact[ -]?check|research|browse|check\\s+online|поищи|найди|проверь|источник\\w*|ссылк\\w*|поиск/i;
+  const searchIntent = /internetdan|internetda|webdan|saytdan|google(da)?|qidir\w*|qid\w*|izla\w*|izlab ber|topib ber|top\w*|tekshir\w*|aniqla\w*|surishtir\w*|manba\w*|havola\w*|link(lar)?|source(s)?|search|look\s*up|find\s+out|verify|fact[ -]?check|research|browse|check\s+online|поищи|найди|проверь|источник\w*|ссылк\w*|поиск/i;
 
-  const currentInfo = /eng\\s+so['’ʻʻ]?nggi|so['’ʻ]?nggi|oxirgi|yangilik\\w*|xabar\\w*|bugun|kecha|ertaga|hozir|ayni\\s+payt|joriy|so‘nggi\\s+holat|real[ -]?time|latest|breaking|today|yesterday|tomorrow|current|recent|this week|this month|right now|news|updates?|live|weather|forecast|ob[ -]?havo|valyuta|kursi?|exchange rate|stock price|birja|aksiyalar|narxi|narxlar|inflatsiya|statistika|statistikasi|reyting|ranking|jadval|natija\\w*|hisob\\w*|score|standings|прямо\\s+сейчас|сегодня|вчера|завтра|последн\\w*|новост\\w*|курс\\w*|погод\\w*|цена|стоимость|статистик\\w*|рейтинг/i;
+  const currentInfo = /eng\s+so['’ʻʻ]?nggi|so['’ʻ]?nggi|oxirgi|yangilik\w*|xabar\w*|bugun|kecha|ertaga|hozir|ayni\s+payt|joriy|so‘nggi\s+holat|real[ -]?time|latest|breaking|today|yesterday|tomorrow|current|recent|this week|this month|right now|news|updates?|live|weather|forecast|ob[ -]?havo|valyuta|kursi?|exchange rate|stock price|birja|aksiyalar|narxi|narxlar|inflatsiya|statistika|statistikasi|reyting|ranking|jadval|natija\w*|hisob\w*|score|standings|прямо\s+сейчас|сегодня|вчера|завтра|последн\w*|новост\w*|курс\w*|погод\w*|цена|стоимость|статистик\w*|рейтинг/i;
 
-  const factualTopic = /chiq\\w*|qachon\\s+chiq|chiqish\\s+sanasi|rasman\\s+chiq|release\\s+date|released|top\\s+\\d+|best\\s+\\d+|eng\\s+yaxshi|eng\\s+zo['’ʻ]?r|tavsiya|recommend|review|taqqosla|solishtir|farqi|vs\\.?\\b|versus|ro['’ʻ]?yxat|kim\\b|nima\\b|qanday\\b|qayer\\w*|qachon\\b|necha\\b|qancha\\b|haqida\\b|ma['’ʻ]?lumot|tarix\\w*|sabab\\w*|foyda\\w*|zarar\\w*|xususiyat\\w*|imkoniyat\\w*|qoida\\w*|qonun\\w*|rasmiy\\w*|kompaniya|prezident|davlat|shahar|aholi|populyatsiya|capital\\b|population\\b|history\\b|facts\\b|price\\b|cost\\b|specs\\b|version\\b|what\\b|who\\b|where\\b|when\\b|why\\b|how\\b|tell me about|explain\\b|define\\b|compare\\b|versus|recommend\\b|review\\b|обзор\\w*|сравни\\w*|разниц\\w*|когда\\b|почему\\b|сколько\\b|что\\b|кто\\b|где\\b|как\\b|истори\\w*|характеристик\\w*|официальн\\w*|дата\\s+выхода/i;
+  const factualTopic = /chiq\w*|qachon\s+chiq|chiqish\s+sanasi|rasman\s+chiq|release\s+date|released|top\s+\d+|best\s+\d+|eng\s+yaxshi|eng\s+zo['’ʻ]?r|tavsiya|recommend|review|taqqosla|solishtir|farqi|vs\.?\b|versus|ro['’ʻ]?yxat|kim\b|nima\b|qanday\b|qayer\w*|qachon\b|necha\b|qancha\b|haqida\b|ma['’ʻ]?lumot|tarix\w*|sabab\w*|foyda\w*|zarar\w*|xususiyat\w*|imkoniyat\w*|qoida\w*|qonun\w*|rasmiy\w*|kompaniya|prezident|davlat|shahar|aholi|populyatsiya|capital\b|population\b|history\b|facts\b|price\b|cost\b|specs\b|version\b|what\b|who\b|where\b|when\b|why\b|how\b|tell me about|explain\b|define\b|compare\b|versus|recommend\b|review\b|обзор\w*|сравни\w*|разниц\w*|когда\b|почему\b|сколько\b|что\b|кто\b|где\b|как\b|истори\w*|характеристик\w*|официальн\w*|дата\s+выхода/i;
 
-  const futureYear = /202[4-9]|20[3-9]\\d/;
-  return searchIntent.test(text) || currentInfo.test(text) || factualTopic.test(text) || futureYear.test(text) || /[?؟]\\s*$/.test(text);
-}}
-
+  const futureYear = /202[4-9]|20[3-9]\d/;
+  return searchIntent.test(text) || currentInfo.test(text) || factualTopic.test(text) || futureYear.test(text) || /[?؟]\s*$/.test(text);
+}
 export async function searchImages(query: string, limit = 8): Promise<WebImageResult[]> {
   const normalized = query.trim().replace(/\s+/g, " ").slice(0, 250);
   if (!normalized) return [];
