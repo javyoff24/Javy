@@ -11,14 +11,14 @@ export async function POST(req:NextRequest){
  const apiKey=process.env.GROQ_API_KEY?.trim();
  if(!apiKey)return Response.json({error:"Vercel sozlamalarida GROQ_API_KEY topilmadi. Environment Variables bo'limiga kalitni kiriting va qayta deploy qiling."},{status:500});
  try{
-  const body=await req.json();const {messages,model,temperature,systemPrompt}=body??{};
+  const body=await req.json();const {messages,model,temperature,systemPrompt,webSearch}=body??{};
   if(!Array.isArray(messages)||messages.length<1||messages.length>50)return Response.json({error:"Xabarlar formati noto'g'ri."},{status:400});
   if(!messages.every((m:any)=>m&&["user","assistant"].includes(m.role)&&typeof m.content==="string"&&m.content.length<=20000))return Response.json({error:"Xabar matni noto'g'ri yoki juda uzun."},{status:400});
   const selected=typeof model==="string"&&MODELS.has(model)?model:DEFAULT_MODEL;
   const temp=typeof temperature==="number"?Math.min(2,Math.max(0,temperature)):0.7;
   const prompt=typeof systemPrompt==="string"?systemPrompt.slice(0,4000):"Sen Javy'san, foydalanuvchi qaysi tilda yozsa, shu tilda (ayniqsa o'zbek tilida) aniq va do'stona javob ber";
   const groq=new Groq({apiKey});
-  const stream=await groq.chat.completions.create({model:selected,temperature:temp,stream:true,messages:[{role:"system",content:prompt},...messages]});
+  const stream=await groq.chat.completions.create({model:selected,temperature:temp,stream:true,messages:[{role:"system",content:prompt},...messages],...(webSearch===true?{tools:[{type:"browser_search"}],tool_choice:"required"}:{})} as any);
   const encoder=new TextEncoder();
   const readable=new ReadableStream({async start(controller){try{for await(const chunk of stream){const token=chunk.choices[0]?.delta?.content;if(token)controller.enqueue(encoder.encode(token));}}catch(error){console.error("Groq stream error:",error);controller.enqueue(encoder.encode("\n\n[STREAM_ERROR]"));}finally{controller.close();}}});
   return new Response(readable,{headers:{"Content-Type":"text/plain; charset=utf-8","Cache-Control":"no-cache, no-transform","X-Content-Type-Options":"nosniff"}});
