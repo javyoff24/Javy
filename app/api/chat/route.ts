@@ -85,20 +85,45 @@ export const POST = monitoredApi("POST /api/chat", async (request, requestId) =>
 
   const groq = new Groq({ apiKey, timeout: 45_000, maxRetries: 1 });
   try {
-    const completion = await groq.chat.completions.create({
-      model,
-      temperature: 1,
-      max_completion_tokens: 4096,
-      reasoning_effort: "low",
-      stream: false,
-      messages: [
-        { role: "system", content: customPrompt + "\n\n" + BASE_PROMPT + "\nDoim rostgo'y bo'l. Bilmagan narsangni aniq deb ko'rsatma." },
-        ...(searchContext ? [{ role: "system" as const, content: searchContext }] : []),
-        ...messages,
-      ],
-    } as any);
+    const baseMessages = [
+      { role: "system" as const, content: customPrompt + "\n\n" + BASE_PROMPT + "\nDoim rostgo'y bo'l. Bilmagan narsangni aniq deb ko'rsatma." },
+      ...(searchContext ? [{ role: "system" as const, content: searchContext }] : []),
+      ...messages,
+    ];
+    let completion: any;
+    let builtInSearchUsed = false;
 
-    const content = completion.choices?.[0]?.message?.content;
+    try {
+      completion = await groq.chat.completions.create({
+        model,
+        temperature: 1,
+        max_completion_tokens: 4096,
+        reasoning_effort: "low",
+        stream: false,
+        messages: baseMessages,
+      } as any);
+    } catch (primaryError: any) {
+      // If a normal completion fails, surface its real error. Browser search is only a
+      // fallback when DuckDuckGo could not return results for a time-sensitive request.
+      if (!searchRequested || searchResults.length > 0) throw primaryError;
+      completion = await groq.chat.completions.create({
+        model,
+        temperature: 1,
+        max_completion_tokens: 4096,
+        reasoning_effort: "low",
+        stream: false,
+        tool_choice: "required",
+        tools: [{ type: "browser_search" }],
+        messages: [
+          { role: "system", content: customPrompt + "\n\nInternet qidiruvi orqali hozirgi ma'lumotlarni top. Javobni foydalanuvchi tilida yoz va ishlatilgan manbalarni ko'rsat." },
+          ...messages,
+        ],
+      } as any);
+      builtInSearchUsed = true;
+    }
+
+    const assistantMessage: any = completion.choices?.[0]?.message ?? {};
+    const content = assistantMessage.content;
     if (typeof content !== "string" || !content.trim()) {
       return Response.json(
         { error: "AI bo'sh javob qaytardi. Qayta urinib ko'ring.", requestId },
@@ -106,13 +131,26 @@ export const POST = monitoredApi("POST /api/chat", async (request, requestId) =>
       );
     }
 
+    const citationSources = Array.isArray(assistantMessage.annotations)
+      ? assistantMessage.annotations.flatMap((annotation: any) => {
+          const citation = annotation?.url_citation;
+          if (typeof citation?.url !== "string" || !/^https?:\/\//i.test(citation.url)) return [];
+          return [{
+            title: typeof citation.title === "string" && citation.title ? citation.title : new URL(citation.url).hostname,
+            url: citation.url,
+            domain: new URL(citation.url).hostname.replace(/^www\./, ""),
+          }];
+        })
+      : [];
+    const sources = searchResults.length ? searchResults : citationSources;
+
     return Response.json(
       {
         content,
-        sources: searchResults.map(({ title, url, domain }) => ({ title, url, domain })),
+        sources,
         searchAttempted: searchRequested,
-        searchUsed: searchResults.length > 0,
-        searchFailed,
+        searchUsed: sources.length > 0 || builtInSearchUsed,
+        searchFailed: searchRequested && sources.length === 0 && !builtInSearchUsed,
         requestId,
       },
       { headers: { "Cache-Control": "no-store", "X-Content-Type-Options": "nosniff" } },
