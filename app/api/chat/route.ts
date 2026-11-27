@@ -75,10 +75,11 @@ export const POST = monitoredApi("POST /api/chat", async (request, requestId) =>
   if (imageParts.length > 3) return Response.json({ error: "Bir xabarda ko‘pi bilan 3 ta rasm yuboring.", requestId }, { status: 400 });
   const groqMessages = messages.map((message: any, index: number) => {
     if (index === messages.length - 1 && (imageParts.length || documentContext)) {
-      return { role: message.role, content: [
-        { type: "text", text: message.content + (documentContext ? "\n\nBiriktirilgan hujjat matni quyida. Hujjatni tahlil qilib, foydalanuvchi savoliga javob ber:\n" + documentContext : "") },
-        ...imageParts,
-      ] };
+      const textContent = message.content + (documentContext ? "\n\nBiriktirilgan hujjat matni quyida. Hujjatni tahlil qilib, foydalanuvchi savoliga javob ber:\n" + documentContext : "");
+      return {
+        role: message.role,
+        content: imageParts.length ? [{ type: "text", text: textContent }, ...imageParts] : textContent,
+      };
     }
     return { role: message.role, content: message.content };
   });
