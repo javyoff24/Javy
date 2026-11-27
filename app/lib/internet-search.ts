@@ -65,7 +65,7 @@ function parseResults(html: string, limit: number): WebSearchResult[] {
 }
 
 export function shouldSearchWeb(message: string): boolean {
-  return /eng\s+so['’ʻʻ]?nggi|so['’ʻʻ]?nggi|oxirgi|yangilik|bugun|hozir|joriy|real[ -]?time|latest|breaking|today|current|recent|this week|right now|news|weather|ob[ -]?havo|valyuta|kursi?|exchange rate|stock price|narxi|narxlar|internetdan qidir|internetda top|web search|search the web|top\s+\d+|best\s+\d+|eng\s+yaxshi|eng\s+zo['’ʻ]?r|tavsiya\s+qil|recommend|review|taqqosla|solishtir|ro['’ʻ]?yxat\s+ber/i.test(message);
+  return /eng\s+so['’ʻʻ]?nggi|so['’ʻ]?nggi|oxirgi|yangilik|bugun|hozir|joriy|real[ -]?time|latest|breaking|today|current|recent|this week|right now|news|weather|ob[ -]?havo|valyuta|kursi?|exchange rate|stock price|narxi|narxlar|chiqdimi|chiqdi|chiqadimi|chiqqan|qachon\s+chiq|chiqish\s+sanasi|rasman\s+chiq|release\s+date|released|internetdan qidir|internetda top|web search|search the web|top\s+\d+|best\s+\d+|eng\s+yaxshi|eng\s+zo['’ʻ]?r|tavsiya\s+qil|recommend|review|taqqosla|solishtir|ro['’ʻ]?yxat\s+ber/i.test(message);
 }
 
 export async function searchImages(query: string, limit = 8): Promise<WebImageResult[]> {
@@ -117,7 +117,7 @@ export async function searchWeb(query: string, limit = 7): Promise<WebSearchResu
   if (cached && cached.expiresAt > Date.now()) return cached.results;
   if (cached) cache.delete(key);
 
-  const recent = /latest|breaking|today|current|recent|news|eng\s+so['’ʻ]?nggi|so['’ʻ]?nggi|oxirgi|yangilik|bugun|hozir/i.test(normalized);
+  const recent = /latest|breaking|today|current|recent|news|eng\s+so['’ʻ]?nggi|so['’ʻ]?nggi|oxirgi|yangilik|bugun|hozir|chiqdimi|chiqdi|chiqadimi|chiqqan|qachon\s+chiq|chiqish\s+sanasi|rasman\s+chiq|release\s+date|released/i.test(normalized);
   const params = new URLSearchParams({ q: normalized, kl: "us-en" });
   if (recent) params.set("df", "w");
 
