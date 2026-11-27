@@ -18,6 +18,81 @@ function cleanAssistantText(value: string) {
   return value.replace(/【\s*\d+†L\d+(?:-L?\d+)?】/g, "").replace(/[ \t]{2,}/g, " ").replace(/\n{3,}/g, "\n\n").trim();
 }
 
+
+function PdfCanvasViewer({ url }: { url: string }) {
+  const containerRef = useRef<HTMLDivElement>(null);
+  const [status, setStatus] = useState("PDF ochilmoqda...");
+  const [scale, setScale] = useState(1.15);
+
+  useEffect(() => {
+    let cancelled = false;
+    let loadingTask: any;
+    let pdfDocument: any;
+
+    async function renderPdf() {
+      const container = containerRef.current;
+      if (!container) return;
+      container.replaceChildren();
+      setStatus("PDF sahifalari yuklanmoqda...");
+      try {
+        const pdfjs: any = await import("pdfjs-dist/legacy/build/pdf.mjs");
+        pdfjs.GlobalWorkerOptions.workerSrc = `https://cdnjs.cloudflare.com/ajax/libs/pdf.js/${pdfjs.version}/pdf.worker.min.mjs`;
+        loadingTask = pdfjs.getDocument({ url });
+        pdfDocument = await loadingTask.promise;
+        if (cancelled) return;
+        setStatus("");
+        for (let pageNumber = 1; pageNumber <= pdfDocument.numPages; pageNumber += 1) {
+          if (cancelled || !containerRef.current) break;
+          const pdfPage = await pdfDocument.getPage(pageNumber);
+          const viewport = pdfPage.getViewport({ scale });
+          const wrapper = document.createElement("section");
+          wrapper.className = "pdf-page";
+          const label = document.createElement("div");
+          label.className = "pdf-page-label";
+          label.textContent = `Sahifa ${pageNumber} / ${pdfDocument.numPages}`;
+          const canvas = document.createElement("canvas");
+          canvas.className = "pdf-page-canvas";
+          const context = canvas.getContext("2d");
+          if (!context) continue;
+          const pixelRatio = Math.min(window.devicePixelRatio || 1, 2);
+          canvas.width = Math.floor(viewport.width * pixelRatio);
+          canvas.height = Math.floor(viewport.height * pixelRatio);
+          canvas.style.width = `${viewport.width}px`;
+          canvas.style.height = `${viewport.height}px`;
+          wrapper.append(label, canvas);
+          containerRef.current.appendChild(wrapper);
+          await pdfPage.render({
+            canvasContext: context,
+            viewport,
+            transform: pixelRatio === 1 ? undefined : [pixelRatio, 0, 0, pixelRatio, 0, 0],
+          }).promise;
+        }
+      } catch (error: any) {
+        if (!cancelled) setStatus(error?.message || "PDF faylni ko‘rsatib bo‘lmadi.");
+      }
+    }
+    renderPdf();
+    return () => {
+      cancelled = true;
+      try { pdfDocument?.destroy?.(); } catch {}
+      try { loadingTask?.destroy?.(); } catch {}
+    };
+  }, [url, scale]);
+
+  return <div className="pdf-viewer">
+    <div className="pdf-toolbar">
+      <span className="text-xs text-slate-500 dark:text-slate-400">PDF hujjat</span>
+      <div className="flex items-center gap-2">
+        <button type="button" onClick={() => setScale(value => Math.max(.65, +(value - .15).toFixed(2)))} className="pdf-zoom-button" aria-label="Kichraytirish">−</button>
+        <span className="min-w-12 text-center text-xs tabular-nums">{Math.round(scale * 100)}%</span>
+        <button type="button" onClick={() => setScale(value => Math.min(2.2, +(value + .15).toFixed(2)))} className="pdf-zoom-button" aria-label="Kattalashtirish">+</button>
+      </div>
+    </div>
+    {status && <p className="px-4 py-6 text-center text-sm text-slate-500 dark:text-slate-400">{status}</p>}
+    <div ref={containerRef} className="pdf-pages" />
+  </div>;
+}
+
 export default function Home() {
   const [chats,setChats] = useState<Chat[]>([]);
   const [activeId,setActiveId] = useState("");
@@ -51,7 +126,7 @@ export default function Home() {
   },[]);
   useEffect(()=>{ const safeChats=chats.map(c=>({...c,messages:c.messages.map(m=>({...m,attachments:m.attachments?.map(({name,type,size})=>({name,type,size}))}))}));localStorage.setItem("javy-chats",JSON.stringify(safeChats)); },[chats]);
   useEffect(()=>{
-    const apply=()=>setDark(theme==="dark" || (theme==="system" && window.matchMedia("(prefers-color-scheme: dark)").matches));
+    const apply=()=>{const active=theme==="dark" || (theme==="system" && window.matchMedia("(prefers-color-scheme: dark)").matches);setDark(active);document.documentElement.classList.toggle("dark",active);document.body.classList.toggle("dark",active);};
     apply(); const mq=window.matchMedia("(prefers-color-scheme: dark)"); mq.addEventListener("change",apply); return ()=>mq.removeEventListener("change",apply);
   },[theme]);
   useEffect(()=>{ bottomRef.current?.scrollIntoView({behavior:"smooth"}); },[messages,busy]);
@@ -110,7 +185,7 @@ export default function Home() {
   function saveSettings(){localStorage.setItem("javy-model",model);localStorage.setItem("javy-prompt",prompt);setSettings(false);}
 
   return <main className={dark?"dark":""}>
-    <div className="flex h-[100dvh] overflow-hidden bg-white text-slate-800 dark:bg-[#212121] dark:text-slate-100">
+    <div className="app-shell flex h-[100dvh] overflow-hidden bg-white text-slate-800 dark:bg-[#17181c] dark:text-slate-100">
       {sidebar&&<button aria-label="Close menu" className="fixed inset-0 z-20 bg-black/40 md:hidden" onClick={()=>setSidebar(false)}/>}
       <aside className={`fixed md:relative z-30 flex h-full w-[280px] shrink-0 flex-col border-r border-slate-200 bg-[#f9f9f9] p-3 transition-transform dark:border-white/10 dark:bg-[#181818] ${sidebar?"translate-x-0":"-translate-x-full md:translate-x-0"}`}>
         <div className="mb-5 flex items-center justify-between px-2 pt-2"><div className="flex items-center gap-2 text-lg font-semibold"><span className="grid h-8 w-8 place-items-center rounded-xl bg-slate-900 text-white dark:bg-white dark:text-slate-900"><Orbit size={17}/></span>Javy</div><button onClick={()=>setSidebar(false)} className="rounded-lg p-2 hover:bg-slate-200 dark:hover:bg-white/10 md:hidden"><X size={18}/></button></div>
@@ -130,6 +205,6 @@ export default function Home() {
         <div className="px-4 pb-[max(.75rem,env(safe-area-inset-bottom))] pt-2"><input ref={fileInputRef} type="file" multiple accept="image/png,image/jpeg,image/webp,application/pdf,text/plain,text/markdown,text/csv" className="hidden" onChange={e=>{const incoming=Array.from(e.target.files||[]);const allowed=incoming.filter(f=>f.size<=2*1024*1024);if(allowed.length!==incoming.length)setError("Har bir fayl 2 MB dan kichik bo‘lishi kerak.");const merged=[...files,...allowed].slice(0,3);if(merged.reduce((sum,f)=>sum+f.size,0)>2_500_000)setError("Bir xabardagi fayllar jami 2.5 MB dan oshmasin.");else setFiles(merged);;e.target.value="";}}/>{files.length>0&&<div className="mx-auto mb-2 flex max-w-3xl flex-wrap gap-2">{files.map((f,i)=><div key={f.name+i} className="flex items-center gap-2 rounded-xl border border-slate-200 bg-white px-3 py-2 text-xs dark:border-white/10 dark:bg-[#2b2b2b]"><button onClick={()=>openFileViewer(f)} className="flex min-w-0 items-center gap-2"><span className="truncate max-w-[150px]">{f.name}</span><Eye size={14}/></button><button onClick={()=>setFiles(old=>old.filter((_,j)=>j!==i))} aria-label="Faylni olib tashlash"><X size={14}/></button></div>)}</div>}<div className="composer-shell mx-auto flex max-w-3xl items-center gap-2 rounded-[26px] border border-slate-200 bg-white p-2 shadow-sm transition-all focus-within:border-blue-300 focus-within:shadow-[0_0_0_3px_rgba(59,130,246,.10)] dark:border-white/15 dark:bg-[#26272c] dark:focus-within:border-blue-400/50 dark:focus-within:shadow-[0_0_0_3px_rgba(59,130,246,.12)]"><button type="button" onClick={()=>fileInputRef.current?.click()} title="Rasm yoki fayl biriktirish" className="composer-action grid h-10 w-10 shrink-0 place-items-center rounded-full text-slate-500 transition hover:bg-slate-100 dark:text-slate-300 dark:hover:bg-white/10"><Paperclip size={17}/></button><textarea ref={inputRef} value={input} onChange={e=>{setInput(e.target.value);e.currentTarget.style.height="auto";e.currentTarget.style.height=Math.min(e.currentTarget.scrollHeight,180)+"px";}} onKeyDown={e=>{if(e.key==="Enter"&&!e.shiftKey){e.preventDefault();sendMessage();}}} placeholder="Javy'ga xabar yuboring..." rows={1} className="chat-input min-h-[42px] max-h-[180px] min-w-0 flex-1 overflow-y-auto resize-none self-center bg-transparent px-3 py-2 text-sm leading-6 placeholder:text-slate-400"/><button aria-label={busy?"To'xtatish":"Yuborish"} disabled={!busy&&!input.trim()&&!files.length} onClick={()=>busy?stop():sendMessage()} className="send-action grid h-10 w-10 shrink-0 place-items-center rounded-full bg-blue-600 text-white shadow-sm transition duration-200 hover:scale-105 hover:bg-blue-700 active:scale-95 disabled:scale-100 disabled:bg-slate-200 disabled:text-slate-400 disabled:shadow-none dark:disabled:bg-white/10 dark:disabled:text-white/25">{busy?<Square size={15} fill="currentColor"/>:<Send size={16}/>}</button></div><p className="mt-2 text-center text-[10px] text-slate-400">Javy xato qilishi mumkin. Muhim ma'lumotlarni tekshirib oling.</p></div>
       </section>
     </div>
-    {viewer&&<div className="fixed inset-0 z-[60] flex items-center justify-center bg-black/80 p-3" onMouseDown={e=>{if(e.target===e.currentTarget)setViewer(null);}}><div className="viewer-modal flex max-h-[92dvh] w-full max-w-5xl flex-col overflow-hidden rounded-2xl bg-white dark:bg-[#202127]"><div className="flex items-center justify-between border-b border-slate-200 p-3 dark:border-white/10"><span className="truncate text-sm font-medium">{viewer.name}</span><button onClick={()=>setViewer(null)} className="rounded-lg p-2 hover:bg-slate-100 dark:hover:bg-white/10"><X size={18}/></button></div><div className="min-h-0 flex-1 overflow-auto bg-slate-50 p-3 dark:bg-[#15161a]">{viewer.type.startsWith("image/")&&viewer.url?<img src={viewer.url} alt={viewer.name} className="mx-auto max-h-[78dvh] max-w-full rounded-lg object-contain"/>:viewer.type==="application/pdf"&&viewer.url?<iframe src={viewer.url} title={viewer.name} className="h-[78dvh] w-full rounded-lg border-0 bg-white"/>:viewer.content!==undefined?<pre className="mx-auto max-w-4xl whitespace-pre-wrap break-words rounded-xl border border-slate-200 bg-white p-4 text-sm leading-7 text-slate-800 shadow-sm dark:border-white/10 dark:bg-[#202127] dark:text-slate-100">{viewer.content}</pre>:<div className="mx-auto max-w-md rounded-2xl border border-dashed border-slate-300 p-8 text-center text-sm text-slate-500 dark:border-white/15 dark:text-slate-400">Bu faylning ko‘rish ma’lumoti mavjud emas. Uni qayta biriktiring.</div>}</div></div></div>}{settings&&<div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4" onMouseDown={e=>{if(e.target===e.currentTarget)setSettings(false);}}><div role="dialog" aria-modal="true" aria-labelledby="settings-title" className="settings-panel w-full max-w-md rounded-2xl border border-slate-200 bg-white p-5 shadow-xl dark:border-white/10 dark:bg-[#202127]"><div className="mb-5 flex items-center justify-between"><h2 id="settings-title" className="text-lg font-semibold">Sozlamalar</h2><button onClick={()=>setSettings(false)} className="rounded-lg p-1 hover:bg-slate-100 dark:hover:bg-white/10"><X size={19}/></button></div><label className="mb-2 block text-sm font-medium">AI modeli</label><select value={model} onChange={e=>setModel(e.target.value)} className="settings-control mb-5 w-full rounded-xl border border-slate-200 bg-white p-3 text-sm dark:border-white/10 dark:bg-[#292c34]">{MODELS.map(m=><option key={m} value={m}>{m}</option>)}</select><label className="mb-2 block text-sm font-medium">System prompt</label><textarea value={prompt} onChange={e=>setPrompt(e.target.value)} rows={4} className="settings-control mb-5 w-full resize-y rounded-xl border border-slate-200 bg-white p-3 text-sm outline-none focus:border-slate-400 dark:border-white/10 dark:bg-[#292c34]"/><div className="mb-5 flex items-center justify-between"><span className="text-sm font-medium">Ko'rinish</span><select value={theme} onChange={e=>{setTheme(e.target.value);localStorage.setItem("javy-theme",e.target.value);}} className="settings-control rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm dark:border-white/10 dark:bg-[#292c34]"><option value="system">Tizim</option><option value="light">Yorug'</option><option value="dark">Qorong'i</option></select></div><button onClick={saveSettings} className="w-full rounded-xl bg-slate-900 py-3 text-sm font-medium text-white hover:bg-slate-700 dark:bg-white dark:text-slate-900">Saqlash</button></div></div>}
+    {viewer&&<div className="fixed inset-0 z-[60] flex items-center justify-center bg-black/80 p-3" onMouseDown={e=>{if(e.target===e.currentTarget)setViewer(null);}}><div className="viewer-modal flex max-h-[92dvh] w-full max-w-5xl flex-col overflow-hidden rounded-2xl bg-white dark:bg-[#202127]"><div className="flex items-center justify-between border-b border-slate-200 p-3 dark:border-white/10"><span className="truncate text-sm font-medium">{viewer.name}</span><button onClick={()=>setViewer(null)} className="rounded-lg p-2 hover:bg-slate-100 dark:hover:bg-white/10"><X size={18}/></button></div><div className="min-h-0 flex-1 overflow-auto bg-slate-50 p-3 dark:bg-[#15161a]">{viewer.type.startsWith("image/")&&viewer.url?<img src={viewer.url} alt={viewer.name} className="mx-auto max-h-[78dvh] max-w-full rounded-lg object-contain"/>:viewer.type==="application/pdf"&&viewer.url?<PdfCanvasViewer url={viewer.url}/>:viewer.content!==undefined?<pre className="mx-auto max-w-4xl whitespace-pre-wrap break-words rounded-xl border border-slate-200 bg-white p-4 text-sm leading-7 text-slate-800 shadow-sm dark:border-white/10 dark:bg-[#202127] dark:text-slate-100">{viewer.content}</pre>:<div className="mx-auto max-w-md rounded-2xl border border-dashed border-slate-300 p-8 text-center text-sm text-slate-500 dark:border-white/15 dark:text-slate-400">Bu faylning ko‘rish ma’lumoti mavjud emas. Uni qayta biriktiring.</div>}</div></div></div>}{settings&&<div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4" onMouseDown={e=>{if(e.target===e.currentTarget)setSettings(false);}}><div role="dialog" aria-modal="true" aria-labelledby="settings-title" className="settings-panel w-full max-w-md rounded-2xl border border-slate-200 bg-white p-5 shadow-xl dark:border-white/10 dark:bg-[#202127]"><div className="mb-5 flex items-center justify-between"><h2 id="settings-title" className="text-lg font-semibold">Sozlamalar</h2><button onClick={()=>setSettings(false)} className="rounded-lg p-1 hover:bg-slate-100 dark:hover:bg-white/10"><X size={19}/></button></div><label className="mb-2 block text-sm font-medium">AI modeli</label><select value={model} onChange={e=>setModel(e.target.value)} className="settings-control mb-5 w-full rounded-xl border border-slate-200 bg-white p-3 text-sm dark:border-white/10 dark:bg-[#292c34]">{MODELS.map(m=><option key={m} value={m}>{m}</option>)}</select><label className="mb-2 block text-sm font-medium">System prompt</label><textarea value={prompt} onChange={e=>setPrompt(e.target.value)} rows={4} className="settings-control mb-5 w-full resize-y rounded-xl border border-slate-200 bg-white p-3 text-sm outline-none focus:border-slate-400 dark:border-white/10 dark:bg-[#292c34]"/><div className="mb-5 flex items-center justify-between"><span className="text-sm font-medium">Ko'rinish</span><select value={theme} onChange={e=>{setTheme(e.target.value);localStorage.setItem("javy-theme",e.target.value);}} className="settings-control rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm dark:border-white/10 dark:bg-[#292c34]"><option value="system">Tizim</option><option value="light">Yorug'</option><option value="dark">Qorong'i</option></select></div><button onClick={saveSettings} className="w-full rounded-xl bg-slate-900 py-3 text-sm font-medium text-white hover:bg-slate-700 dark:bg-white dark:text-slate-900">Saqlash</button></div></div>}
   </main>;
 }
