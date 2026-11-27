@@ -45,6 +45,9 @@ export const POST = monitoredApi("POST /api/chat", async (request, requestId) =>
     return Response.json({ error: "Xabar matni noto'g'ri yoki juda uzun.", requestId }, { status: 400 });
   }
 
+  // Keep UI-only metadata (for example `sources`) out of Groq chat messages.
+  const groqMessages = messages.map((message: any) => ({ role: message.role, content: message.content }));
+
   const model = typeof body.model === "string" && ALLOWED_MODELS.has(body.model)
     ? body.model
     : DEFAULT_MODEL;
@@ -88,7 +91,7 @@ export const POST = monitoredApi("POST /api/chat", async (request, requestId) =>
     const baseMessages = [
       { role: "system" as const, content: customPrompt + "\n\n" + BASE_PROMPT + "\nDoim rostgo'y bo'l. Bilmagan narsangni aniq deb ko'rsatma." },
       ...(searchContext ? [{ role: "system" as const, content: searchContext }] : []),
-      ...messages,
+      ...groqMessages,
     ];
     let completion: any;
     let builtInSearchUsed = false;
