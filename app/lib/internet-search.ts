@@ -65,11 +65,11 @@ function parseResults(html: string, limit: number): WebSearchResult[] {
 }
 
 export function shouldSearchWeb(message: string): boolean {
-  return /eng\\s+so['’ʻʻ]?nggi|so['’ʻʻ]?nggi|oxirgi|yangilik|bugun|hozir|joriy|real[ -]?time|latest|breaking|today|current|recent|this week|right now|news|weather|ob[ -]?havo|valyuta|kursi?|exchange rate|stock price|narxi|narxlar|internetdan qidir|internetda top|web search|search the web|top\\s+\\d+|best\\s+\\d+|eng\\s+yaxshi|eng\\s+zo['’ʻ]?r|tavsiya\\s+qil|recommend|review|taqqosla|solishtir|ro['’ʻ]?yxat\\s+ber/i.test(message);
+  return /eng\s+so['’ʻʻ]?nggi|so['’ʻʻ]?nggi|oxirgi|yangilik|bugun|hozir|joriy|real[ -]?time|latest|breaking|today|current|recent|this week|right now|news|weather|ob[ -]?havo|valyuta|kursi?|exchange rate|stock price|narxi|narxlar|internetdan qidir|internetda top|web search|search the web|top\s+\d+|best\s+\d+|eng\s+yaxshi|eng\s+zo['’ʻ]?r|tavsiya\s+qil|recommend|review|taqqosla|solishtir|ro['’ʻ]?yxat\s+ber/i.test(message);
 }
 
 export async function searchImages(query: string, limit = 8): Promise<WebImageResult[]> {
-  const normalized = query.trim().replace(/\\s+/g, " ").slice(0, 250);
+  const normalized = query.trim().replace(/\s+/g, " ").slice(0, 250);
   if (!normalized) return [];
   const initial = new URL("https://duckduckgo.com/");
   initial.searchParams.set("q", normalized);
@@ -83,7 +83,7 @@ export async function searchImages(query: string, limit = 8): Promise<WebImageRe
   const first = await fetch(initial.toString(), { headers, cache: "no-store", signal: AbortSignal.timeout(9000) });
   if (!first.ok) return [];
   const html = await first.text();
-  const token = html.match(/vqd=["']([^"']+)["']/i)?.[1] || html.match(/\\bvqd=([^&"' ]+)/i)?.[1];
+  const token = html.match(/vqd=["']([^"']+)["']/i)?.[1] || html.match(/\bvqd=([^&"' ]+)/i)?.[1];
   if (!token) return [];
   const endpoint = new URL("https://duckduckgo.com/i.js");
   endpoint.searchParams.set("q", normalized);
@@ -98,10 +98,10 @@ export async function searchImages(query: string, limit = 8): Promise<WebImageRe
   const seen = new Set<string>();
   for (const item of Array.isArray(data.results) ? data.results : []) {
     const imageUrl = typeof item.thumbnail === "string" ? item.thumbnail : typeof item.image === "string" ? item.image : "";
-    const sourceUrl = typeof item.url === "string" ? item.url : typeof item.url === "string" ? item.url : "";
-    if (!/^https?:\\/\\//i.test(imageUrl) || seen.has(imageUrl)) continue;
+    const sourceUrl = typeof item.url === "string" ? item.url : typeof item.source === "string" ? item.source : "";
+    if (!/^https?:\/\//i.test(imageUrl) || seen.has(imageUrl)) continue;
     let domain = "";
-    try { domain = new URL(sourceUrl).hostname.replace(/^www\\./, ""); } catch {}
+    try { domain = new URL(sourceUrl).hostname.replace(/^www\./, ""); } catch {}
     output.push({ title: typeof item.title === "string" ? item.title : normalized, imageUrl, sourceUrl, domain });
     seen.add(imageUrl);
     if (output.length >= Math.min(Math.max(limit, 1), 10)) break;
