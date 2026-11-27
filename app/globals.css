@@ -47,3 +47,6 @@ button{touch-action:manipulation}
 
 /* Keep chat movement smooth without affecting the fixed composer. */
 html{scroll-behavior:smooth}
+
+/* Composer input uses the surrounding panel as its subtle focus indicator. */
+.chat-input:focus,.chat-input:focus-visible{outline:none!important;box-shadow:none!important}
