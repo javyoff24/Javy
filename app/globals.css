@@ -50,3 +50,15 @@ html{scroll-behavior:smooth}
 
 /* Composer input uses the surrounding panel as its subtle focus indicator. */
 .chat-input:focus,.chat-input:focus-visible{outline:none!important;box-shadow:none!important}
+
+
+/* Render Markdown tables as readable vertical cards instead of wide grids. */
+.prose table{display:block;width:100%;max-width:100%;overflow:visible;border:0;border-collapse:separate;border-spacing:0;margin:1rem 0}
+.prose thead{display:block;margin-bottom:.5rem}
+.prose thead tr{display:grid;grid-template-columns:repeat(auto-fit,minmax(0,1fr));gap:.5rem}
+.prose thead th{display:block;border:0;border-radius:10px;background:rgba(148,163,184,.13);padding:9px 11px;text-align:left;font-size:.78rem;font-weight:650}
+.prose tbody{display:grid;gap:.65rem}
+.prose tbody tr{display:flex;flex-direction:column;gap:.25rem;border:1px solid var(--line);border-radius:13px;padding:10px 12px;background:rgba(148,163,184,.045)}
+.prose tbody td{display:block;border:0;padding:3px 0;line-height:1.55;overflow-wrap:anywhere}
+.prose tbody td+td{border-top:1px solid rgba(148,163,184,.16);padding-top:7px}
+.prose a{overflow-wrap:anywhere}
