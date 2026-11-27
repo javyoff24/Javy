@@ -45,6 +45,20 @@ function parseResults(html: string, limit: number): WebSearchResult[] {
   const results: WebSearchResult[] = [];
   const seen = new Set<string>();
   const blocks = html.match(/<div\b[^>]*class=["'][^"']*\bresult\b[^"']*["'][^>]*>[\s\S]*?(?=<div\b[^>]*class=["'][^"']*\bresult\b|$)/gi) || [];
+  if (!blocks.length) {
+    const links = html.matchAll(/<a\b[^>]*class=["'][^"']*result__a[^"']*["'][^>]*href=["']([^"']+)["'][^>]*>([\s\S]*?)<\/a>/gi);
+    for (const match of links) {
+      const url = unwrapUrl(match[1]);
+      const title = cleanText(match[2]);
+      if (!url || !title || seen.has(url)) continue;
+      let domain = "";
+      try { domain = new URL(url).hostname.replace(/^www\./, ""); } catch {}
+      results.push({ title, url, snippet: "", domain });
+      seen.add(url);
+      if (results.length >= limit) break;
+    }
+    return results;
+  }
 
   for (const block of blocks) {
     const linkMatch = block.match(/<a\b(?=[^>]*class=["'][^"']*\bresult__a\b)[^>]*href=["']([^"']+)["'][^>]*>([\s\S]*?)<\/a>/i);
@@ -65,8 +79,9 @@ function parseResults(html: string, limit: number): WebSearchResult[] {
 }
 
 export function shouldSearchWeb(message: string): boolean {
-  return /eng\s+so['’ʻʻ]?nggi|so['’ʻ]?nggi|oxirgi|yangilik|bugun|hozir|joriy|real[ -]?time|latest|breaking|today|current|recent|this week|right now|news|weather|ob[ -]?havo|valyuta|kursi?|exchange rate|stock price|narxi|narxlar|chiqdimi|chiqdi|chiqadimi|chiqqan|qachon\s+chiq|chiqish\s+sanasi|rasman\s+chiq|release\s+date|released|internetdan qidir|internetda top|web search|search the web|top\s+\d+|best\s+\d+|eng\s+yaxshi|eng\s+zo['’ʻ]?r|tavsiya\s+qil|recommend|review|taqqosla|solishtir|ro['’ʻ]?yxat\s+ber/i.test(message);
-}
+  const text = message.toLocaleLowerCase("uz");
+  return /eng\s+so['’ʻʻ]?nggi|so['’ʻ]?nggi|oxirgi|yangilik|bugun|hozir|joriy|real[ -]?time|latest|breaking|today|current|recent|this week|right now|news|weather|ob[ -]?havo|valyuta|kursi?|exchange rate|stock price|narxi|narxlar|chiq\w*|qachon\s+chiq|chiqish\s+sanasi|rasman\s+chiq|release\s+date|released|internetdan|internetda|qidir\w*|qid\w*|web search|search the web|top\s+\d+|best\s+\d+|202[4-9]|20[3-9]\d|eng\s+yaxshi|eng\s+zo['’ʻ]?r|tavsiya|recommend|review|taqqosla|solishtir|ro['’ʻ]?yxat/i.test(text);
+}}
 
 export async function searchImages(query: string, limit = 8): Promise<WebImageResult[]> {
   const normalized = query.trim().replace(/\s+/g, " ").slice(0, 250);
