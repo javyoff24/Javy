@@ -1,0 +1,18 @@
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+:root { color-scheme: light; }
+.dark { color-scheme: dark; }
+* { box-sizing: border-box; }
+html, body { height: 100%; }
+body { margin: 0; font-family: Inter, ui-sans-serif, system-ui, sans-serif; }
+::selection { background: #dbeafe; color: #172554; }
+.prose pre { overflow-x: auto; border-radius: 12px; padding: 16px; background: #111827; color: #e5e7eb; }
+.prose :not(pre) > code { background: rgba(148,163,184,.18); padding: 2px 5px; border-radius: 5px; font-size: .9em; }
+.prose p { margin: .7em 0; }
+.prose ul, .prose ol { padding-left: 1.4rem; margin: .7em 0; }
+.prose a { color: #3b82f6; text-decoration: underline; }
+.prose h1,.prose h2,.prose h3 { font-weight: 650; margin: 1em 0 .45em; }
+.prose blockquote { border-left: 3px solid #94a3b8; padding-left: 1rem; opacity: .85; }
+button, textarea { -webkit-tap-highlight-color: transparent; }
