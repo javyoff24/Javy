@@ -6,7 +6,7 @@ export const runtime = "nodejs";
 
 const DEFAULT_MODEL = "openai/gpt-oss-120b";
 const ALLOWED_MODELS = new Set([DEFAULT_MODEL, "openai/gpt-oss-20b"]);
-const BASE_PROMPT = "Sen Javy'san. Foydalanuvchi qaysi tilda yozsa, shu tilda, ayniqsa o'zbek tilida, aniq va do'stona javob ber.";
+const BASE_PROMPT = "Sen Javy'san. Foydalanuvchi qaysi tilda yozsa, shu tilda, ayniqsa o'zbek tilida, aniq va do'stona javob ber. Javobni chiroyli Markdown bilan tuz: oddiy ro'yxat, tavsiya va izohlarni jadvalga aylantirma; sarlavha va punktlardan foydalan. Jadvalni faqat haqiqiy taqqoslash yoki ustunli ma'lumot zarur bo'lganda ishlat. Manbalarni javob ichida 【】, [1], [2] kabi texnik belgilar bilan ko'rsatma va alohida 'Manbalar' ro'yxatini matnga yozma — manbalar interfeysda alohida ko'rsatiladi. Havolalarni oddiy, to'liq URL ko'rinishida ber.";
 
 export const POST = monitoredApi("POST /api/chat", async (request, requestId) => {
   const ip = request.headers.get("x-forwarded-for")?.split(",")[0]?.trim() || "unknown";
@@ -80,7 +80,7 @@ export const POST = monitoredApi("POST /api/chat", async (request, requestId) =>
         ...searchResults.map((item, index) =>
           "[" + (index + 1) + "] " + item.title + "\nURL: " + item.url + "\nSayt: " + item.domain + "\nQisqacha: " + item.snippet
         ),
-        "Javobda tegishli faktlardan keyin [1], [2] kabi manba raqamlarini ko'rsat. Manbada yo'q faktlarni uydirma. Javobni foydalanuvchi tilida yoz.",
+        "Manbaga tayangan faktlarni aniq bayon qil, lekin javob matniga [1], [2] yoki 【】 kabi iqtibos belgilarini kiritma; manbalar interfeysda alohida chiqadi. Manbada yo'q faktlarni uydirma. Javobni foydalanuvchi tilida yoz. Oddiy ro'yxatlarni jadval qilma; jadval faqat haqiqiy taqqoslash uchun kerak bo'lsa ishlat.",
       ].join("\n\n")
     : searchRequested
       ? "Foydalanuvchi eng yangi ma'lumot so'radi, ammo hozir DuckDuckGo qidiruvi natija bermadi. Yangilik yoki joriy faktlarni o'zingdan to'qima; qidiruv ishlamaganini ochiq ayt."
@@ -108,7 +108,7 @@ export const POST = monitoredApi("POST /api/chat", async (request, requestId) =>
         tool_choice: "required",
         tools: [{ type: "browser_search" }],
         messages: [
-          { role: "system", content: customPrompt + "\n\nInternet qidiruvi orqali hozirgi ma'lumotlarni top. Javobni foydalanuvchi tilida yoz va ishlatilgan manbalarni ko'rsat." },
+          { role: "system", content: customPrompt + "\n\nInternet qidiruvi orqali hozirgi ma'lumotlarni top. Javobni foydalanuvchi tilida yoz. Texnik citation belgilarini yoki alohida Manbalar ro'yxatini javob matniga yozma; manbalar interfeysda alohida ko'rsatiladi. Oddiy ro'yxatlarni jadvalga aylantirma." },
           ...groqMessages,
         ],
       } as any);
