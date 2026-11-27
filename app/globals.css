@@ -58,6 +58,8 @@ html{scroll-behavior:smooth}
 .prose tbody{display:grid;gap:.7rem}
 .prose tbody tr{display:flex;flex-direction:column;gap:.45rem;border:1px solid var(--line);border-radius:15px;padding:13px 15px;background:rgba(148,163,184,.045);box-shadow:0 1px 2px rgba(15,23,42,.035)}
 .prose tbody td{display:block;border:0;padding:0;line-height:1.65;overflow-wrap:anywhere}
+.prose tbody td:first-child{font-size:1rem;font-weight:700;color:#1e293b}
+.dark .prose tbody td:first-child{color:#f8fafc}
 .prose tbody td+td{border:0;padding-top:.35rem}
 .prose tbody td a{display:inline-flex;max-width:100%;align-items:center;gap:.35rem;border-radius:7px;background:rgba(59,130,246,.08);padding:3px 8px;color:#2563eb;text-decoration:none;font-weight:600}
 .dark .prose tbody td a{color:#93c5fd;background:rgba(59,130,246,.13)}
