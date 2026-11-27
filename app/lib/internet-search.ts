@@ -1,3 +1,5 @@
+export type WebImageResult = { title: string; imageUrl: string; sourceUrl: string; domain: string };
+
 export type WebSearchResult = {
   title: string;
   url: string;
@@ -63,7 +65,48 @@ function parseResults(html: string, limit: number): WebSearchResult[] {
 }
 
 export function shouldSearchWeb(message: string): boolean {
-  return /eng\s+so['’ʻʻ]?nggi|so['’ʻʻ]?nggi|oxirgi|yangilik|bugun|hozir|joriy|real[ -]?time|latest|breaking|today|current|recent|this week|right now|news|weather|ob[ -]?havo|valyuta|kursi?|exchange rate|stock price|narxi|narxlar|internetdan qidir|internetda top|web search|search the web/i.test(message);
+  return /eng\\s+so['’ʻʻ]?nggi|so['’ʻʻ]?nggi|oxirgi|yangilik|bugun|hozir|joriy|real[ -]?time|latest|breaking|today|current|recent|this week|right now|news|weather|ob[ -]?havo|valyuta|kursi?|exchange rate|stock price|narxi|narxlar|internetdan qidir|internetda top|web search|search the web|top\\s+\\d+|best\\s+\\d+|eng\\s+yaxshi|eng\\s+zo['’ʻ]?r|tavsiya\\s+qil|recommend|review|taqqosla|solishtir|ro['’ʻ]?yxat\\s+ber/i.test(message);
+}
+
+export async function searchImages(query: string, limit = 8): Promise<WebImageResult[]> {
+  const normalized = query.trim().replace(/\\s+/g, " ").slice(0, 250);
+  if (!normalized) return [];
+  const initial = new URL("https://duckduckgo.com/");
+  initial.searchParams.set("q", normalized);
+  initial.searchParams.set("iax", "images");
+  initial.searchParams.set("ia", "images");
+  const headers = {
+    "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 Chrome/126.0.0.0 Safari/537.36",
+    "Accept": "text/html,application/xhtml+xml",
+    "Accept-Language": "en-US,en;q=0.9,uz;q=0.8",
+  };
+  const first = await fetch(initial.toString(), { headers, cache: "no-store", signal: AbortSignal.timeout(9000) });
+  if (!first.ok) return [];
+  const html = await first.text();
+  const token = html.match(/vqd=["']([^"']+)["']/i)?.[1] || html.match(/\\bvqd=([^&"' ]+)/i)?.[1];
+  if (!token) return [];
+  const endpoint = new URL("https://duckduckgo.com/i.js");
+  endpoint.searchParams.set("q", normalized);
+  endpoint.searchParams.set("o", "json");
+  endpoint.searchParams.set("l", "us-en");
+  endpoint.searchParams.set("vqd", token);
+  endpoint.searchParams.set("f", ",,,,,");
+  const response = await fetch(endpoint.toString(), { headers: { ...headers, "Accept": "application/json" }, cache: "no-store", signal: AbortSignal.timeout(9000) });
+  if (!response.ok) return [];
+  const data: any = await response.json();
+  const output: WebImageResult[] = [];
+  const seen = new Set<string>();
+  for (const item of Array.isArray(data.results) ? data.results : []) {
+    const imageUrl = typeof item.thumbnail === "string" ? item.thumbnail : typeof item.image === "string" ? item.image : "";
+    const sourceUrl = typeof item.url === "string" ? item.url : typeof item.url === "string" ? item.url : "";
+    if (!/^https?:\\/\\//i.test(imageUrl) || seen.has(imageUrl)) continue;
+    let domain = "";
+    try { domain = new URL(sourceUrl).hostname.replace(/^www\\./, ""); } catch {}
+    output.push({ title: typeof item.title === "string" ? item.title : normalized, imageUrl, sourceUrl, domain });
+    seen.add(imageUrl);
+    if (output.length >= Math.min(Math.max(limit, 1), 10)) break;
+  }
+  return output;
 }
 
 export async function searchWeb(query: string, limit = 7): Promise<WebSearchResult[]> {
