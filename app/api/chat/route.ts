@@ -2,7 +2,7 @@ import Groq from "groq-sdk";
 import { NextRequest } from "next/server";
 export const runtime = "nodejs";
 const DEFAULT_MODEL = "openai/gpt-oss-120b";
-const MODELS = new Set([DEFAULT_MODEL,"openai/gpt-oss-20b","llama-3.3-70b-versatile","llama-3.1-8b-instant","qwen/qwen3.8-27b"]);
+const MODELS = new Set([DEFAULT_MODEL,"openai/gpt-oss-20b"]);
 const hits = new Map<string,{count:number;reset:number}>();
 function limited(key:string){const now=Date.now();const item=hits.get(key);if(!item||item.reset<now){hits.set(key,{count:1,reset:now+60000});return false;}item.count++;return item.count>20;}
 export async function POST(req:NextRequest){
