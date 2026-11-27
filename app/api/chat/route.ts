@@ -106,31 +106,30 @@ export const POST = monitoredApi("POST /api/chat", async (request, requestId) =>
     let completion: any;
     let builtInSearchUsed = false;
 
-    if (searchRequested && searchResults.length === 0) {
-      // DuckDuckGo can be rate-limited by its public HTML endpoint. In that case,
-      // use Groq's documented built-in browser_search tool as a second provider.
-      completion = await groq.chat.completions.create({
-        model,
-        temperature: 1,
-        max_completion_tokens: 4096,
-        reasoning_effort: "low",
-        stream: false,
-        tool_choice: "required",
-        tools: [{ type: "browser_search" }],
-        messages: [
-          { role: "system", content: customPrompt + "\n\n" + BASE_PROMPT + "\nInternet qidiruvi orqali hozirgi ma'lumotlarni top. Javobni foydalanuvchi tilida yoz. Texnik citation belgilarini yoki alohida Manbalar ro'yxatini javob matniga yozma; manbalar interfeysda alohida ko'rsatiladi. Oddiy ro'yxatlarni jadvalga aylantirma." },
-          ...groqMessages,
-        ],
-      } as any);
-      builtInSearchUsed = true;
+    if (searchRequested) {
+      // Always use Groq's live browser search for search-intent requests.
+      try {
+        completion = await groq.chat.completions.create({
+          model, temperature: 1, max_completion_tokens: 4096, reasoning_effort: "low",
+          stream: false, tool_choice: "required", tools: [{ type: "browser_search" }],
+          messages: [
+            { role: "system", content: customPrompt + "\\n\\n" + BASE_PROMPT + "\\nInternetda faol qidiruv o'tkaz. Bir nechta ishonchli, imkon qadar birlamchi manbalarni tekshir va faktlarni solishtir. Faqat topilgan dalillarga tayan, hech narsa uydirma. Internetga kira olmaslik haqidagi eski yoki umumiy ogohlantirishlarni yozma. Texnik citation belgilarini va alohida manbalar ro'yxatini javob matniga yozma; manbalar interfeysda ko'rsatiladi." },
+            ...(searchContext ? [{ role: "system" as const, content: searchContext }] : []),
+            ...groqMessages,
+          ],
+        } as any);
+        builtInSearchUsed = true;
+      } catch (browserError) {
+        console.error(JSON.stringify({ type: "javy_browser_search_error", requestId, message: browserError instanceof Error ? browserError.message.slice(0, 500) : String(browserError).slice(0, 500) }));
+        if (searchResults.length || imageResults.length) {
+          completion = await groq.chat.completions.create({ model, temperature: 1, max_completion_tokens: 4096, reasoning_effort: "low", stream: false, messages: baseMessages } as any);
+        } else {
+          throw browserError;
+        }
+      }
     } else {
       completion = await groq.chat.completions.create({
-        model,
-        temperature: 1,
-        max_completion_tokens: 4096,
-        reasoning_effort: "low",
-        stream: false,
-        messages: baseMessages,
+        model, temperature: 1, max_completion_tokens: 4096, reasoning_effort: "low", stream: false, messages: baseMessages,
       } as any);
     }
 
