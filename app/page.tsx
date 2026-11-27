@@ -59,7 +59,7 @@ export default function Home() {
     if(!chat){chat={id:uid(),title:value.slice(0,42)+(value.length>42?"…":""),messages:[],updatedAt:Date.now()};setChats(p=>[chat!,...p]);setActiveId(chat.id);}
     const id=chat.id;
     const prior=retry?chat.messages.slice(0,-1):chat.messages;
-    const next=[...prior,{role:"user" as const,content:value}];
+    const next=retry?prior:[...prior,{role:"user" as const,content:value}];
     updateChat(id,c=>({...c,title:c.messages.length===0?value.slice(0,42)+(value.length>42?"…": ""):c.title,messages:[...next,{role:"assistant",content:""}],updatedAt:Date.now()}));
     setInput("");setError("");setBusy(true);
     const controller=new AbortController();abortRef.current=controller;
