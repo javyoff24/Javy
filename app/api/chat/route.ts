@@ -6,7 +6,7 @@ export const runtime = "nodejs";
 
 const DEFAULT_MODEL = "openai/gpt-oss-120b";
 const ALLOWED_MODELS = new Set([DEFAULT_MODEL, "openai/gpt-oss-20b"]);
-const BASE_PROMPT = "Sen Javy'san. Foydalanuvchi qaysi tilda yozsa, shu tilda, ayniqsa o'zbek tilida, aniq va do'stona javob ber. Javobni chiroyli Markdown bilan tuz: oddiy ro'yxat, tavsiya va izohlarni jadvalga aylantirma; sarlavha va punktlardan foydalan. Jadvalni faqat haqiqiy taqqoslash yoki ustunli ma'lumot zarur bo'lganda ishlat. Manbalarni javob ichida 【】, [1], [2] kabi texnik belgilar bilan ko'rsatma va alohida 'Manbalar' ro'yxatini matnga yozma — manbalar interfeysda alohida ko'rsatiladi. Havolalarni oddiy, to'liq URL ko'rinishida ber.";
+const BASE_PROMPT = "Sen Javy'san. Foydalanuvchi qaysi tilda yozsa, shu tilda, ayniqsa o'zbek tilida, aniq va do'stona javob ber. Javobni chiroyli Markdown bilan tuz: oddiy ro'yxat, tavsiya va izohlarni jadvalga aylantirma; sarlavha va punktlardan foydalan. Jadvalni faqat haqiqiy taqqoslash yoki ustunli ma'lumot zarur bo'lganda ishlat. Manbalarni javob ichida 【】, [1], [2] kabi texnik belgilar bilan ko'rsatma va alohida Manbalar ro'yxatini matnga yozma — manbalar interfeysda alohida ko'rsatiladi. Havolalarni oddiy, to'liq URL ko'rinishida ber. Hozirgi faktlarni internet natijalaridan tekshir. Qidiruv natijalarida tasdiqlanmagan nom, sana, reyting, platforma yoki xususiyatni aslo uydirma. Mavjud bo'lmagan o'yin yoki mahsulot nomini yaratib TOP ro'yxatga qo'shma. Agar 5 ta ishonchli nom topilmasa, faqat tasdiqlanganlarini ber va qolganlari haqida manba yetishmasligini ay.";
 
 export const POST = monitoredApi("POST /api/chat", async (request, requestId) => {
   const ip = request.headers.get("x-forwarded-for")?.split(",")[0]?.trim() || "unknown";
@@ -54,16 +54,27 @@ export const POST = monitoredApi("POST /api/chat", async (request, requestId) =>
   const customPrompt = typeof body.systemPrompt === "string"
     ? body.systemPrompt.slice(0, 4_000)
     : BASE_PROMPT;
-  const lastUserMessage = [...messages].reverse().find((message: any) => message.role === "user");
-  const searchRequested = Boolean(lastUserMessage?.content && shouldSearchWeb(lastUserMessage.content));
+  const userMessages = messages.filter((message: any) => message.role === "user");
+  const lastUserMessage = userMessages[userMessages.length - 1];
+  const previousUserMessage = userMessages[userMessages.length - 2];
+  const lastText = String(lastUserMessage?.content || "").trim();
+  const explicitSearchIntent = /internet|web search|search the web|qidir\w*|qid\w*/i.test(lastText);
+  const shortFollowUp = lastText.split(/\s+/).filter(Boolean).length <= 6;
+  const inheritsSearchTopic = Boolean(shortFollowUp && previousUserMessage?.content && shouldSearchWeb(previousUserMessage.content));
+  const searchRequested = Boolean(lastText && (shouldSearchWeb(lastText) || explicitSearchIntent || inheritsSearchTopic));
+  const searchQuery = explicitSearchIntent
+    ? String(previousUserMessage?.content || lastText).trim()
+    : inheritsSearchTopic
+      ? String(previousUserMessage.content).trim() + " " + lastText
+      : lastText;
 
   let searchResults: Awaited<ReturnType<typeof searchWeb>> = [];
   let imageResults: Awaited<ReturnType<typeof searchImages>> = [];
   let searchFailed = false;
   if (searchRequested) {
     const [webResult, imageResult] = await Promise.allSettled([
-      searchWeb(lastUserMessage.content, 7),
-      searchImages(lastUserMessage.content, 8),
+      searchWeb(searchQuery, 7),
+      searchImages(searchQuery, 8),
     ]);
     if (webResult.status === "fulfilled") searchResults = webResult.value;
     else console.error(JSON.stringify({ type: "javy_search_error", requestId, provider: "duckduckgo", error: webResult.reason instanceof Error ? webResult.reason.message : String(webResult.reason) }));
@@ -79,7 +90,7 @@ export const POST = monitoredApi("POST /api/chat", async (request, requestId) =>
           "[" + (index + 1) + "] " + item.title + "\nURL: " + item.url + "\nSayt: " + item.domain + "\nQisqacha: " + item.snippet
         ),
         ...(imageResults.length ? ["IMAGE SEARCH RESULTS (use exact URLs as Markdown images, matching them to relevant items; never invent URLs):", ...imageResults.map((item, index) => "IMAGE " + (index + 1) + ": " + item.title + "\nImage URL: " + item.imageUrl + "\nSource page: " + item.sourceUrl)] : []),
-        "Manbaga tayangan faktlarni aniq bayon qil, lekin javob matniga [1], [2] yoki 【】 kabi iqtibos belgilarini kiritma; manbalar interfeysda alohida chiqadi. Manbada yo'q faktlarni uydirma. Javobni foydalanuvchi tilida yoz. Oddiy ro'yxatlarni jadval qilma; jadval faqat haqiqiy taqqoslash uchun kerak bo'lsa ishlat. Agar IMAGE SEARCH RESULTS berilgan bo'lsa, vizual tavsiya kartochkalari uchun har bir mos element oldidan ro'yxatdagi mos rasmni Markdown image sifatida joylashtir; rasm URLlarini o'zgartirma yoki yangisini uydirma. Har bir tavsiya uchun nom, qisqa tavsif va foydali tafsilotlar ber.",
+        "Faqat qidiruv natijalari tasdiqlaydigan faktlarni ayt. Natijada yo'q o'yin nomi, reliz sanasi, platforma, reyting yoki xususiyatni uydirma. TOP ro'yxatni soxta nomlar bilan to'ldirma. Qisqa davomiy xabarlarda oldingi foydalanuvchi mavzusini davom ettir. Javobni foydalanuvchi tilida yoz. Oddiy ro'yxatlarni jadval qilma. Agar IMAGE SEARCH RESULTS berilgan bo'lsa, faqat mos rasm URLlarini ishlat; rasm URLlarini o'zgartirma yoki yangisini uydirma.",
       ].join("\n\n")
     : searchRequested
       ? "Foydalanuvchi eng yangi ma'lumot so'radi, ammo hozir DuckDuckGo qidiruvi natija bermadi. Yangilik yoki joriy faktlarni o'zingdan to'qima; qidiruv ishlamaganini ochiq ayt."
