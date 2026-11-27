@@ -74,7 +74,7 @@ export default function Home() {
       const data=await response.json();
       const answer=typeof data.content==="string"?data.content:"Javob olinmadi.";
       const sources=Array.isArray(data.sources)?data.sources:[];
-      const images=Array.isArray(data.images)?data.images.filter((image:any)=>typeof image.imageUrl==="string"&&/^https?:\\/\\//i.test(image.imageUrl)):[];
+      const images=Array.isArray(data.images)?data.images.filter((image:any)=>typeof image.imageUrl==="string"&&/^https?:\/\//i.test(image.imageUrl)):[];
       
       const searchWarning=data.searchFailed?"\n\n*Internet qidiruvi hozircha natija bermadi. Eng yangi ma'lumotlar tasdiqlanmagan bo'lishi mumkin.*":"";
       const fullAnswer=cleanAssistantText(answer)+searchWarning;
