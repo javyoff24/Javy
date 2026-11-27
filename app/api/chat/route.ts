@@ -1,6 +1,6 @@
 import Groq from "groq-sdk";
 import { checkRateLimit, monitoredApi } from "../../lib/api-monitor";
-import { searchWeb, shouldSearchWeb } from "../../lib/internet-search";
+import { searchImages, searchWeb, shouldSearchWeb } from "../../lib/internet-search";
 
 export const runtime = "nodejs";
 
@@ -58,20 +58,18 @@ export const POST = monitoredApi("POST /api/chat", async (request, requestId) =>
   const searchRequested = Boolean(lastUserMessage?.content && shouldSearchWeb(lastUserMessage.content));
 
   let searchResults: Awaited<ReturnType<typeof searchWeb>> = [];
+  let imageResults: Awaited<ReturnType<typeof searchImages>> = [];
   let searchFailed = false;
   if (searchRequested) {
-    try {
-      searchResults = await searchWeb(lastUserMessage.content, 7);
-      searchFailed = searchResults.length === 0;
-    } catch (error) {
-      searchFailed = true;
-      console.error(JSON.stringify({
-        type: "javy_search_error",
-        requestId,
-        provider: "duckduckgo",
-        error: error instanceof Error ? error.message : String(error),
-      }));
-    }
+    const [webResult, imageResult] = await Promise.allSettled([
+      searchWeb(lastUserMessage.content, 7),
+      searchImages(lastUserMessage.content, 8),
+    ]);
+    if (webResult.status === "fulfilled") searchResults = webResult.value;
+    else console.error(JSON.stringify({ type: "javy_search_error", requestId, provider: "duckduckgo", error: webResult.reason instanceof Error ? webResult.reason.message : String(webResult.reason) }));
+    if (imageResult.status === "fulfilled") imageResults = imageResult.value;
+    else console.error(JSON.stringify({ type: "javy_image_search_error", requestId, provider: "duckduckgo-images", error: imageResult.reason instanceof Error ? imageResult.reason.message : String(imageResult.reason) }));
+    searchFailed = searchResults.length === 0 && imageResults.length === 0;
   }
 
   const searchContext = searchResults.length
@@ -80,7 +78,8 @@ export const POST = monitoredApi("POST /api/chat", async (request, requestId) =>
         ...searchResults.map((item, index) =>
           "[" + (index + 1) + "] " + item.title + "\nURL: " + item.url + "\nSayt: " + item.domain + "\nQisqacha: " + item.snippet
         ),
-        "Manbaga tayangan faktlarni aniq bayon qil, lekin javob matniga [1], [2] yoki 【】 kabi iqtibos belgilarini kiritma; manbalar interfeysda alohida chiqadi. Manbada yo'q faktlarni uydirma. Javobni foydalanuvchi tilida yoz. Oddiy ro'yxatlarni jadval qilma; jadval faqat haqiqiy taqqoslash uchun kerak bo'lsa ishlat.",
+        ...(imageResults.length ? ["IMAGE SEARCH RESULTS (use exact URLs as Markdown images, matching them to relevant items; never invent URLs):", ...imageResults.map((item, index) => "IMAGE " + (index + 1) + ": " + item.title + "\nImage URL: " + item.imageUrl + "\nSource page: " + item.sourceUrl)] : []),
+        "Manbaga tayangan faktlarni aniq bayon qil, lekin javob matniga [1], [2] yoki 【】 kabi iqtibos belgilarini kiritma; manbalar interfeysda alohida chiqadi. Manbada yo'q faktlarni uydirma. Javobni foydalanuvchi tilida yoz. Oddiy ro'yxatlarni jadval qilma; jadval faqat haqiqiy taqqoslash uchun kerak bo'lsa ishlat. Agar IMAGE SEARCH RESULTS berilgan bo'lsa, vizual tavsiya kartochkalari uchun har bir mos element oldidan ro'yxatdagi mos rasmni Markdown image sifatida joylashtir; rasm URLlarini o'zgartirma yoki yangisini uydirma. Har bir tavsiya uchun nom, qisqa tavsif va foydali tafsilotlar ber.",
       ].join("\n\n")
     : searchRequested
       ? "Foydalanuvchi eng yangi ma'lumot so'radi, ammo hozir DuckDuckGo qidiruvi natija bermadi. Yangilik yoki joriy faktlarni o'zingdan to'qima; qidiruv ishlamaganini ochiq ayt."
