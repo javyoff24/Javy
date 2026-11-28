@@ -188,7 +188,7 @@ async function getJavyReply(message, guestName) {
 }
 
 async function handleUpdate(update) {
-  const message = update.message;
+  const message = update.message || update.business_message;
   if (!message?.chat?.id) return;
 
   const chatId = message.chat.id;
@@ -289,7 +289,7 @@ Buyruqlar:
     typingTimer.unref?.();
 
     const answer = await getJavyReply(prompt, firstName);
-    await sendMessage(chatId, answer);
+    await sendMessage(chatId, answer, businessConnectionId ? { business_connection_id: businessConnectionId } : {});
   } catch (error) {
     console.error("Javy Telegram error:", error);
     const messageText = error instanceof Error ? error.message : "Noma'lum xatolik yuz berdi.";
