@@ -208,19 +208,42 @@ export default function Home() {
     if(!("speechSynthesis" in window) || typeof SpeechSynthesisUtterance==="undefined"){setError("Bu qurilmada ovoz chiqarib o‘qish qo‘llab-quvvatlanmaydi.");return;}
     if(speakingIndex===index){speechRunRef.current++;window.speechSynthesis.cancel();setSpeakingIndex(null);return;}
     speechRunRef.current++;const run=speechRunRef.current;window.speechSynthesis.cancel();
-    const words=text.trim().split(/\s+/);const chunks:string[]=[];let part="";for(const word of words){if((part+" "+word).trim().length>150&&part){chunks.push(part);part=word;}else part=(part+" "+word).trim();}if(part)chunks.push(part);
-    const voices=window.speechSynthesis.getVoices();
-    const voice=voices.find(v=>/^uz(-|$)/i.test(v.lang))||voices.find(v=>v.default)||null;
-    const speakChunk=(position:number)=>{
+    const words=text.trim().split(/\s+/);const chunks:string[]=[];let part="";for(const word of words){if((part+" "+word).trim().length>140&&part){chunks.push(part);part=word;}else part=(part+" "+word).trim();}if(part)chunks.push(part);
+    const synth=window.speechSynthesis;
+    const start=()=>{
       if(speechRunRef.current!==run)return;
-      if(position>=chunks.length){setSpeakingIndex(null);return;}
-      const utterance=new SpeechSynthesisUtterance(chunks[position]);
-      utterance.lang=voice?.lang||"uz-UZ";if(voice)utterance.voice=voice;utterance.rate=0.96;
-      utterance.onend=()=>speakChunk(position+1);
-      utterance.onerror=()=>{if(speechRunRef.current===run){setSpeakingIndex(null);setError("Ovoz ijrosida xatolik. Qurilmadagi matnni ovozga aylantirish (TTS) ovozlarini tekshiring.");}};
-      window.speechSynthesis.speak(utterance);
+      const voices=synth.getVoices();
+      const voice=voices.find(v=>/^uz(-|$)/i.test(v.lang))||voices.find(v=>v.default)||voices[0]||null;
+      const speakChunk=(position:number,fallback=false)=>{
+        if(speechRunRef.current!==run)return;
+        if(position>=chunks.length){setSpeakingIndex(null);return;}
+        const utterance=new SpeechSynthesisUtterance(chunks[position]);
+        if(voice&&!fallback){utterance.voice=voice;utterance.lang=voice.lang;}
+        else utterance.lang=navigator.language||"en-US";
+        utterance.rate=0.92;
+        utterance.onend=()=>speakChunk(position+1);
+        utterance.onerror=(event)=>{
+          if(speechRunRef.current!==run)return;
+          if(!fallback&&(event.error==="voice-unavailable"||event.error==="language-unavailable"||event.error==="synthesis-failed")){
+            window.setTimeout(()=>speakChunk(position,true),120);
+            return;
+          }
+          setSpeakingIndex(null);
+          setError("Ovoz ijro etilmadi. Android sozlamalarida Google matnni ovozga aylantirish xizmatini tekshiring.");
+        };
+        synth.speak(utterance);
+      };
+      speakChunk(0);
+      window.setTimeout(()=>{if(speechRunRef.current===run)synth.resume();},250);
     };
-    setSpeakingIndex(index);window.setTimeout(()=>{if(speechRunRef.current===run){window.speechSynthesis.resume();speakChunk(0);}},80);
+    setSpeakingIndex(index);
+    if(synth.getVoices().length){window.setTimeout(start,180);}
+    else{
+      let settled=false;
+      const onVoices=()=>{if(settled)return;settled=true;synth.removeEventListener("voiceschanged",onVoices);start();};
+      synth.addEventListener("voiceschanged",onVoices);
+      window.setTimeout(()=>{if(!settled){settled=true;synth.removeEventListener("voiceschanged",onVoices);start();}},900);
+    }
   }
   function rateMessage(index:number,rating:"up"|"down"){updateChat(activeId,c=>({...c,messages:c.messages.map((m,j)=>j===index?{...m,feedback:m.feedback===rating?undefined:rating}:m),updatedAt:Date.now()}));}
 
