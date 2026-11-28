@@ -327,7 +327,10 @@ export async function searchWeb(query: string, limit = 7): Promise<WebSearchResu
   const seen = new Set<string>();
   for (const result of settled) {
     if (result.status !== "fulfilled") continue;
-    for (const item of result.value) {
+    // Filter each provider before applying the result limit, so irrelevant early
+    // results cannot prevent later providers from contributing useful matches.
+    const providerRelevant = filterRelevantResults(effectiveQuery, result.value, broadNews);
+    for (const item of providerRelevant) {
       if (!seen.has(item.url)) {
         merged.push(item);
         seen.add(item.url);
