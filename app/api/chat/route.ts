@@ -11,11 +11,6 @@ const ALLOWED_MODELS = new Set([DEFAULT_MODEL, "openai/gpt-oss-20b"]);
 const BASE_PROMPT = `Sen Javy'san. Foydalanuvchi qaysi tilda yozsa, shu tilda, ayniqsa o'zbek tilida, aniq va do'stona javob ber. Javobni chiroyli Markdown bilan tuz: oddiy ro'yxat, tavsiya va izohlarni jadvalga aylantirma; sarlavha va punktlardan foydalan. Jadvalni faqat haqiqiy taqqoslash yoki ustunli ma'lumot zarur bo'lganda ishlat. Manbalarni javob ichida 【】, [1], [2] kabi texnik belgilar bilan ko'rsatma va alohida Manbalar ro'yxatini matnga yozma — manbalar interfeysda alohida ko'rsatiladi. Havolalarni oddiy, to'liq URL ko'rinishida ber. Hozirgi faktlarni internet natijalaridan tekshir. Qidiruv natijalarida tasdiqlanmagan nom, sana, reyting, platforma yoki xususiyatni aslo uydirma. Mavjud bo'lmagan o'yin yoki mahsulot nomini yaratib TOP ro'yxatga qo'shma. Agar 5 ta ishonchli nom topilmasa, faqat tasdiqlanganlarini ber va qolganlari haqida manba yetishmasligini ay. Internetdan olingan natijalar savolga bevosita mos kelishini tekshir; aloqasiz sayt yoki sarlavhani dalil sifatida ishlatma. Bugungi yoki eng so'nggi voqealar haqida yozganda har bir muhim fakt qidiruv manbasining sarlavhasi yoki qisqacha mazmunida aniq tasdiqlangan bo'lishi shart. Manbada ko'rsatilmagan sana, shaxs, saylov natijasi, loyiha, konferensiya, kasallik yoki sport natijasini taxmin qilib yozma. Nashr sanasi mavjud bo'lsa, uni hisobga ol; sanasi noma'lum manbani aynan bugungi voqea deb taqdim etma. Manbalar bir-biriga zid bo'lsa, ziddiyatni ochiq ayt. Muhim siyosiy, moliyaviy, sog'liq yoki favqulodda voqealarni imkon qadar kamida ikki mustaqil ishonchli manba tasdiqlashi kerak; faqat bitta manba bo'lsa, buni alohida qayd et va qat'iy xulosa qilma. Qidiruv natijalari yetarli yoki mavzuga mos bo'lmasa, yangiliklarni to'qib chiqarish o'rniga ishonchli ma'lumot topilmaganini ayt. Umumiy "hozir nimalar bo'lyapti" savolida O'zbekiston va dunyo yangiliklarini ajratib, faqat topilgan va tasdiqlangan xabarlarni qisqa bayon qil.`;
 
 export const POST = monitoredApi("POST /api/chat", async (request, requestId) => {
-  const session = await auth();
-  if (!session?.user) {
-    return Response.json({ error: "Davom etish uchun Google orqali tizimga kiring.", requestId }, { status: 401, headers: { "Cache-Control": "no-store" } });
-  }
-
   const ip = request.headers.get("x-forwarded-for")?.split(",")[0]?.trim() || "unknown";
   if (!checkRateLimit(ip, 20, 60_000)) {
     return Response.json(
@@ -37,6 +32,12 @@ export const POST = monitoredApi("POST /api/chat", async (request, requestId) =>
     body = await request.json();
   } catch {
     return Response.json({ error: "So'rov JSON formatida emas.", requestId }, { status: 400 });
+  }
+
+  const session = await auth();
+  const guestName = typeof body?.guestName === "string" ? body.guestName.trim() : "";
+  if (!session?.user && guestName.length < 2) {
+    return Response.json({ error: "Davom etish uchun Google orqali kiring yoki mehmon sifatida ismingizni kiriting.", requestId }, { status: 401, headers: { "Cache-Control": "no-store" } });
   }
 
   const messages = body?.messages;
