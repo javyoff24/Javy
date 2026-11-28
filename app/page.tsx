@@ -23,11 +23,11 @@ function cleanAssistantText(value: string) {
     return "@@JAVY_CODE_" + (codeBlocks.length - 1) + "@@";
   });
   const normalizedDelimiters = protectedCode
-    .replace(/\\\[([\s\S]*?)\\\]/g, (_, math) => "$\n" + math.trim() + "\n$")
+    .replace(/\\\[([\s\S]*?)\\\]/g, (_, math) => "$" + "$\n" + math.trim() + "\n" + "$" + "$")
     .replace(/\\\(([\s\S]*?)\\\)/g, (_, math) => "$" + math.trim() + "$");
   const normalized = normalizedDelimiters.replace(/(^|\n)([^\n]*)\[\s*([^\]\n]*?(?:\\(?:frac|sqrt|sum|int|lim|pm|begin)|[=^_])[^\]\n]*?)\s*\]/g, (_, lineStart, before, math) => {
     const isEmbedded = before.trim().length > 0;
-    return lineStart + before + (isEmbedded ? "$" + math.trim() + "$" : "$\n" + math.trim() + "\n$");
+    return lineStart + before + (isEmbedded ? "$" + math.trim() + "$" : "$" + "$\n" + math.trim() + "\n" + "$" + "$");
   });
   const restoredCode = normalized.replace(/@@JAVY_CODE_(\d+)@@/g, (_, index) => codeBlocks[Number(index)]);
   return restoredCode.replace(/【\s*\d+†L\d+(?:-L?\d+)?】/g, "").replace(/[ \t]{2,}/g, " ").replace(/\n{3,}/g, "\n\n").trim();
