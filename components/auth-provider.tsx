@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { SessionProvider, signIn, useSession } from "next-auth/react";
 
 function GoogleMark() {
@@ -15,10 +15,18 @@ function AuthGate({ children }: { children: React.ReactNode }) {
   const { data: session, status } = useSession();
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState("");
+  const [guestName, setGuestName] = useState("");
+  const [guestInput, setGuestInput] = useState("");
+
+  useEffect(() => {
+    const saved = localStorage.getItem("javy-guest-name") || "";
+    setGuestName(saved);
+    setGuestInput(saved);
+  }, []);
 
   if (status === "loading") return <main className="grid min-h-[100dvh] place-items-center bg-[#090b12] text-white"><div className="flex items-center gap-3 text-sm text-white/70"><span className="h-5 w-5 animate-spin rounded-full border-2 border-white/20 border-t-white"/>Javy tayyorlanmoqda...</div></main>;
 
-  if (!session?.user) return (
+  if (!session?.user && !guestName) return (
     <main className="relative flex min-h-[100dvh] items-center justify-center overflow-hidden bg-[#090b12] px-5 py-10 text-white">
       <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(ellipse_at_15%_10%,rgba(59,130,246,.22),transparent_38%),radial-gradient(ellipse_at_85%_85%,rgba(139,92,246,.2),transparent_40%)]"/>
       <div className="pointer-events-none absolute inset-0 opacity-[.1] [background-image:linear-gradient(rgba(255,255,255,.12)_1px,transparent_1px),linear-gradient(90deg,rgba(255,255,255,.12)_1px,transparent_1px)] [background-size:44px_44px]"/>
@@ -44,7 +52,13 @@ function AuthGate({ children }: { children: React.ReactNode }) {
               {busy?<span className="h-5 w-5 animate-spin rounded-full border-2 border-slate-300 border-t-blue-600"/>:<GoogleMark/>}{busy?"Google’ga ulanmoqda...":"Google bilan davom etish"}
             </button>
             {error&&<p role="alert" className="mt-4 rounded-xl border border-red-400/20 bg-red-400/10 px-4 py-3 text-sm text-red-200">{error}</p>}
-            <div className="my-8 flex items-center gap-3"><span className="h-px flex-1 bg-white/10"/><span className="text-[10px] font-medium uppercase tracking-[.16em] text-white/30">Xavfsiz kirish</span><span className="h-px flex-1 bg-white/10"/></div>
+            <div className="my-7 flex items-center gap-3"><span className="h-px flex-1 bg-white/10"/><span className="text-[10px] font-medium uppercase tracking-[.16em] text-white/30">yoki</span><span className="h-px flex-1 bg-white/10"/></div>
+            <div className="space-y-3">
+              <label htmlFor="javy-guest-name" className="block text-sm font-medium text-slate-200">Mehmon sifatida davom etish</label>
+              <input id="javy-guest-name" value={guestInput} onChange={event=>setGuestInput(event.target.value)} maxLength={40} placeholder="Ismingizni kiriting" className="min-h-[50px] w-full rounded-2xl border border-white/10 bg-white/[.06] px-4 text-sm text-white outline-none transition placeholder:text-white/30 focus:border-blue-400/60 focus:ring-2 focus:ring-blue-400/15"/>
+              <button type="button" disabled={guestInput.trim().length<2} onClick={()=>{const name=guestInput.trim().slice(0,40);localStorage.setItem("javy-guest-name",name);setGuestName(name);}} className="min-h-[50px] w-full rounded-2xl border border-white/10 bg-white/[.08] px-5 py-3 text-sm font-semibold text-white transition hover:bg-white/[.13] disabled:cursor-not-allowed disabled:opacity-40">Mehmon bo‘lib kirish</button>
+            </div>
+            <div className="my-7 flex items-center gap-3"><span className="h-px flex-1 bg-white/10"/><span className="text-[10px] font-medium uppercase tracking-[.16em] text-white/30">Xavfsiz kirish</span><span className="h-px flex-1 bg-white/10"/></div>
             <div className="flex items-start gap-3 rounded-2xl border border-white/[.07] bg-white/[.035] p-4"><svg viewBox="0 0 24 24" className="mt-0.5 h-5 w-5 shrink-0 text-emerald-300" fill="none" stroke="currentColor" strokeWidth="1.7"><path d="M12 3 19 6v5c0 4.5-2.9 7.8-7 10-4.1-2.2-7-5.5-7-10V6l7-3Z"/><path d="m9 12 2 2 4-4"/></svg><p className="text-xs leading-5 text-slate-400">Google orqali kirish himoyalangan. Parolingiz Javy’da saqlanmaydi.</p></div>
             <p className="mt-8 text-center text-[11px] leading-5 text-white/30">Davom etish orqali xizmatdan foydalanish shartlariga rozilik bildirasiz.</p>
           </div>
