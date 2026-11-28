@@ -172,6 +172,62 @@ export async function searchImages(query: string, limit = 8): Promise<WebImageRe
   }
 }
 
+async function searchOfficialFinance(query: string): Promise<WebSearchResult[]> {
+  const normalized = query.toLocaleLowerCase("uz");
+  const results: WebSearchResult[] = [];
+  const headers = { ...SEARCH_HEADERS, Accept: "application/json" };
+
+  if (/dollar|dollarning|\\busd\\b|so['’ʻ]?m|sum|uzs|valyuta|exchange rate|kurs/i.test(normalized)) {
+    try {
+      const response = await fetch("https://cbu.uz/uz/arkhiv-kursov-valyut/json/USD/", {
+        headers,
+        cache: "no-store",
+        signal: AbortSignal.timeout(5000),
+      });
+      if (response.ok) {
+        const data: any = await response.json();
+        const item = Array.isArray(data) ? data[0] : null;
+        if (item?.Rate) {
+          results.push({
+            title: "O‘zbekiston Markaziy banki — AQSh dollari kursi",
+            url: "https://cbu.uz/uz/arkhiv-kursov-valyut/json/USD/",
+            snippet: "Sana: " + String(item.Date || "Markaziy bank ma’lumoti") + ". 1 USD = " + String(item.Rate) + " UZS. Kurs Markaziy bankning rasmiy ma’lumotidan olindi.",
+            domain: "cbu.uz",
+          });
+        }
+      }
+    } catch (error) {
+      console.error(JSON.stringify({ type: "javy_finance_source_error", provider: "cbu-usd", error: error instanceof Error ? error.message : String(error) }));
+    }
+  }
+
+  if (/bitcoin|bitkoin|\\bbtc\\b|kriptovalyuta|kripto|ethereum|\\beth\\b/i.test(normalized)) {
+    try {
+      const response = await fetch("https://api.coingecko.com/api/v3/simple/price?ids=bitcoin&vs_currencies=usd,uzs", {
+        headers,
+        cache: "no-store",
+        signal: AbortSignal.timeout(5000),
+      });
+      if (response.ok) {
+        const data: any = await response.json();
+        const price = data?.bitcoin;
+        if (price && (typeof price.usd === "number" || typeof price.uzs === "number")) {
+          results.push({
+            title: "CoinGecko — Bitcoin narxi",
+            url: "https://www.coingecko.com/en/coins/bitcoin",
+            snippet: "Joriy API kotirovkasi: " + (typeof price.usd === "number" ? "1 BTC = $" + price.usd.toLocaleString("en-US") : "") + (typeof price.uzs === "number" ? " (taxminan " + price.uzs.toLocaleString("en-US") + " UZS)" : "") + ". Bu bozor narxi; birja vaqti va platformasiga qarab farq qilishi mumkin.",
+            domain: "coingecko.com",
+          });
+        }
+      }
+    } catch (error) {
+      console.error(JSON.stringify({ type: "javy_finance_source_error", provider: "coingecko-bitcoin", error: error instanceof Error ? error.message : String(error) }));
+    }
+  }
+
+  return results;
+}
+
 export async function searchWeb(query: string, limit = 7): Promise<WebSearchResult[]> {
   const normalized = query.trim().replace(/\s+/g, " ").slice(0, 350);
   if (!normalized) return [];
@@ -179,6 +235,12 @@ export async function searchWeb(query: string, limit = 7): Promise<WebSearchResu
   const cached = cache.get(key);
   if (cached && cached.expiresAt > Date.now()) return cached.results;
   if (cached) cache.delete(key);
+
+  const officialFinanceResults = await searchOfficialFinance(normalized);
+  if (officialFinanceResults.length) {
+    cache.set(key, { expiresAt: Date.now() + CACHE_TTL, results: officialFinanceResults });
+    return officialFinanceResults;
+  }
 
   const recent = /latest|breaking|today|current|recent|news|eng\s+so['’ʻ]?nggi|so['’ʻ]?nggi|oxirgi|yangilik|bugun|hozir|chiqdimi|chiqdi|chiqadimi|chiqqan|qachon\s+chiq|release\s+date|released/i.test(normalized);
   const params = new URLSearchParams({ q: normalized });
