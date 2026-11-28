@@ -505,6 +505,7 @@ server.listen(PORT, "0.0.0.0", async () => {
   }
 
   try {
+    await loadAutomation();
     const me = await telegram("getMe", {});
     botUsername = me.username || "";
     const result = await telegram("setWebhook", {
@@ -513,7 +514,8 @@ server.listen(PORT, "0.0.0.0", async () => {
       allowed_updates: ["message", "business_connection", "business_message", "edited_business_message"],
       drop_pending_updates: false,
     });
-    console.log(`Telegram webhook registered for @${botUsername || "bot"}:`, Boolean(result));\n    startAutomation();
+    console.log(`Telegram webhook registered for @${botUsername || "bot"}:`, Boolean(result));
+    startAutomation();
   } catch (error) {
     console.error("Telegram startup configuration failed:", error.message);
   }
