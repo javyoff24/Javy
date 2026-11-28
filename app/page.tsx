@@ -18,14 +18,9 @@ const suggestions = ["Next.js nima va u qanday ishlaydi?","Menga haftalik o'qish
 
 function cleanAssistantText(value: string) {
   const normalizedDelimiters = value
-    .replace(/\\\[([\s\S]*?)\\\]/g, (_, math) => \`$$
-\${math.trim()}
-$$\`)
-    .replace(/\\\(([\s\S]*?)\\\)/g, (_, math) => \`$\${math.trim()}$\`);
-  const normalized = normalizedDelimiters.replace(/(^|\n)\s*\[\s*([^\]\n]*?(?:\\(?:frac|sqrt|sum|int|lim|pm|begin)|[=^_])[^\]\n]*?)\s*\](?=\s*(?:\n|$))/g, (_, prefix, math) => \`\${prefix}
-$$
-\${math.trim()}
-$$\`);
+    .replace(/\\\[([\s\S]*?)\\\]/g, (_, math) => "$$\n" + math.trim() + "\n$$")
+    .replace(/\\\(([\s\S]*?)\\\)/g, (_, math) => "$" + math.trim() + "$");
+  const normalized = normalizedDelimiters.replace(/(^|\n)\s*\[\s*([^\]\n]*?(?:\\(?:frac|sqrt|sum|int|lim|pm|begin)|[=^_])[^\]\n]*?)\s*\](?=\s*(?:\n|$))/g, (_, prefix, math) => prefix + "\n$$\n" + math.trim() + "\n$$");
   return normalized.replace(/【\s*\d+†L\d+(?:-L?\d+)?】/g, "").replace(/[ \t]{2,}/g, " ").replace(/\n{3,}/g, "\n\n").trim();
 }
 
