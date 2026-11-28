@@ -166,7 +166,6 @@ export const POST = monitoredApi("POST /api/chat", async (request, requestId) =>
       ...(searchContext ? [{ role: "system" as const, content: searchContext }] : []),
       ...groqMessages,
     ];
-    let completion: any;
     // Use our own web-search results as context. Never force Groq tool invocation:
     // GPT-OSS may answer without calling a tool, which causes tool_use_failed (400).
     const completion = await groq.chat.completions.create({
