@@ -208,7 +208,7 @@ export default function Home() {
     if(!("speechSynthesis" in window) || typeof SpeechSynthesisUtterance==="undefined"){setError("Bu qurilmada ovoz chiqarib o‘qish qo‘llab-quvvatlanmaydi.");return;}
     if(speakingIndex===index){speechRunRef.current++;window.speechSynthesis.cancel();setSpeakingIndex(null);return;}
     speechRunRef.current++;const run=speechRunRef.current;window.speechSynthesis.cancel();
-    const chunks=text.replace(/\\s+/g," ").match(/.{1,170}(?:[.!?…]|$)\\s*/g)?.map(x=>x.trim()).filter(Boolean) || [text];
+    const chunks=text.replace(/\s+/g," ").match(/.{1,170}(?:[.!?…]|$)\s*/g)?.map(x=>x.trim()).filter(Boolean) || [text];
     const voices=window.speechSynthesis.getVoices();
     const voice=voices.find(v=>/^uz(-|$)/i.test(v.lang))||voices.find(v=>/^ru(-|$)/i.test(v.lang))||voices.find(v=>/^en(-|$)/i.test(v.lang));
     const speakChunk=(position:number)=>{
