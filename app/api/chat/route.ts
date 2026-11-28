@@ -169,54 +169,61 @@ export const POST = monitoredApi("POST /api/chat", async (request, requestId) =>
     let completion: any;
     // Use our own web-search results as context. Never force Groq tool invocation:
     // GPT-OSS may answer without calling a tool, which causes tool_use_failed (400).
-    completion = await groq.chat.completions.create({
+    const completion = await groq.chat.completions.create({
       model,
       temperature: 1,
       max_completion_tokens: 4096,
       reasoning_effort: "low",
-      stream: false,
+      stream: true,
       messages: baseMessages,
     } as any);
 
-    const assistantMessage: any = completion.choices?.[0]?.message ?? {};
-    const content = assistantMessage.content;
-    if (typeof content !== "string" || !content.trim()) {
-      return Response.json(
-        { error: "AI bo'sh javob qaytardi. Qayta urinib ko'ring.", requestId },
-        { status: 502, headers: { "Cache-Control": "no-store" } },
-      );
-    }
-
-    const citationSources = Array.isArray(assistantMessage.annotations)
-      ? assistantMessage.annotations.flatMap((annotation: any) => {
-          const citation = annotation?.url_citation;
-          if (typeof citation?.url !== "string" || !/^https?:\/\//i.test(citation.url)) return [];
-          return [{
-            title: typeof citation.title === "string" && citation.title ? citation.title : new URL(citation.url).hostname,
-            url: citation.url,
-            domain: new URL(citation.url).hostname.replace(/^www\./, ""),
-          }];
-        })
-      : [];
     const imageSources = imageResults
       .filter((item) => typeof item.sourceUrl === "string" && /^https?:\/\//i.test(item.sourceUrl))
       .map((item) => ({ title: item.title || item.domain || "Rasm manbasi", url: item.sourceUrl, domain: item.domain || new URL(item.sourceUrl).hostname.replace(/^www\./, "") }));
-    const sources = [...searchResults, ...citationSources, ...imageSources].filter((item, index, all) =>
+    const sources = [...searchResults, ...imageSources].filter((item, index, all) =>
       all.findIndex((candidate) => candidate.url === item.url) === index
     );
-
-    return Response.json(
-      {
-        content,
-        sources,
-        images: imageResults,
-        searchAttempted: searchRequested,
-        searchUsed: sources.length > 0 || imageResults.length > 0,
-        searchFailed: searchRequested && sources.length === 0 && imageResults.length === 0,
-        requestId,
+    const encoder = new TextEncoder();
+    const stream = new ReadableStream<Uint8Array>({
+      async start(controller) {
+        const send = (payload: unknown) => controller.enqueue(encoder.encode("data: " + JSON.stringify(payload) + "\\n\\n"));
+        try {
+          let hasContent = false;
+          for await (const chunk of completion as any) {
+            const delta = chunk.choices?.[0]?.delta?.content;
+            if (typeof delta === "string" && delta.length) {
+              hasContent = true;
+              send({ type: "delta", content: delta });
+            }
+          }
+          if (!hasContent) send({ type: "error", error: "AI bo'sh javob qaytardi. Qayta urinib ko'ring." });
+          else send({
+            type: "done",
+            sources,
+            images: imageResults,
+            searchAttempted: searchRequested,
+            searchUsed: sources.length > 0 || imageResults.length > 0,
+            searchFailed: searchRequested && sources.length === 0 && imageResults.length === 0,
+            requestId,
+          });
+        } catch (streamError) {
+          console.error(JSON.stringify({ type: "javy_stream_error", requestId, message: streamError instanceof Error ? streamError.message.slice(0, 400) : String(streamError) }));
+          send({ type: "error", error: "Javob oqimida xatolik yuz berdi. Qayta urinib ko'ring." });
+        } finally {
+          controller.close();
+        }
       },
-      { headers: { "Cache-Control": "no-store", "X-Content-Type-Options": "nosniff" } },
-    );
+    });
+    return new Response(stream, {
+      headers: {
+        "Content-Type": "text/event-stream; charset=utf-8",
+        "Cache-Control": "no-cache, no-transform",
+        "Connection": "keep-alive",
+        "X-Content-Type-Options": "nosniff",
+        "X-Accel-Buffering": "no",
+      },
+    });
   } catch (error: any) {
     const status = Number(error?.status) || 502;
     const providerMessage = typeof error?.error?.message === "string"
