@@ -23,7 +23,7 @@ export const GET = monitoredApi("GET /api/health", async () => {
       status: healthy ? "ok" : "degraded",
       services: {
         chat: chatStatus,
-        webSearch: "DuckDuckGo HTML + Lite and Bing RSS fallback",
+        webSearch: "Google News RSS + DuckDuckGo HTML/Lite + Bing RSS; relevance filtering enabled",
         pdf: "server-side extraction enabled",
       },
       timestamp: new Date().toISOString(),
