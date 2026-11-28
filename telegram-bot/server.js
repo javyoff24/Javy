@@ -49,6 +49,8 @@ async function telegram(method, payload) {
 function mainKeyboard() {
   return {
     keyboard: [
+      [{ text: "👤 Profil" }, { text: "🕒 Vaqt" }],
+      [{ text: "💡 Motivatsiya" }, { text: "🎯 Sanagich" }],
       [{ text: "❓ Yordam" }, { text: "🤖 Javy haqida" }],
     ],
     resize_keyboard: true,
@@ -72,6 +74,33 @@ async function sendMessage(chatId, text, extra = {}) {
       ...extra,
     });
   }
+}
+
+function tashkentNow() {
+  return new Intl.DateTimeFormat('uz-UZ', { timeZone: 'Asia/Tashkent', dateStyle: 'full', timeStyle: 'medium' }).format(new Date());
+}
+
+const dailyQuotes = [
+  'Bugun kichik qadam tashla — katta natija shundan boshlanadi. 🌱',
+  'O‘zingga ishon. Sen o‘ylaganingdan kuchliroqsan. 💪',
+  'Mukammallikni kutma, boshlashning o‘zi g‘alaba. 🚀',
+  'Har bir urinish seni maqsadingga yaqinlashtiradi. ✨',
+  'Bugungi mehnating ertangi imkoniyatingdir. 🌟',
+  'Sekin bo‘lsa ham oldinga yur. To‘xtab qolma. 🔥',
+  'O‘zing bilan kechagidan yaxshiroq bo‘lishga intil. 💙'
+];
+
+function quoteForToday() {
+  const day = Math.floor(Date.now() / 86400000);
+  return dailyQuotes[((day % dailyQuotes.length) + dailyQuotes.length) % dailyQuotes.length];
+}
+
+function daysToNewYear() {
+  const parts = new Intl.DateTimeFormat('en-CA', { timeZone: 'Asia/Tashkent', year: 'numeric', month: '2-digit', day: '2-digit' }).formatToParts(new Date());
+  const values = Object.fromEntries(parts.map((p) => [p.type, p.value]));
+  const now = Date.UTC(Number(values.year), Number(values.month) - 1, Number(values.day));
+  const target = Date.UTC(Number(values.year) + (values.month === '12' && values.day === '31' ? 1 : 0), 0, 1);
+  return Math.max(0, Math.ceil((target - now) / 86400000));
 }
 
 function commandOf(text) {
@@ -168,6 +197,27 @@ async function handleUpdate(update) {
   const firstName = rawName.length >= 2 ? rawName : username.length >= 2 ? username : "Telegram mehmoni";
   const text = typeof message.text === "string" ? message.text.trim() : "";
   const command = commandOf(text);
+
+  if (command === "profile" || text === "👤 Profil") {
+    await sendMessage(chatId, `👤 Profil\n\nIsm: ${firstName}\nUsername: ${username ? "@" + username : "yo‘q"}\nTelegram ID: ${message.from?.id || "—"}\nVaqt: ${tashkentNow()}\nJavy akkaunti: /link orqali ulash haqida ma’lumot oling.`, { reply_markup: mainKeyboard() });
+    return;
+  }
+  if (command === "time" || text === "🕒 Vaqt") {
+    await sendMessage(chatId, `🕒 Toshkent vaqti: ${tashkentNow()}`, { reply_markup: mainKeyboard() });
+    return;
+  }
+  if (command === "motivation" || text === "💡 Motivatsiya") {
+    await sendMessage(chatId, `💡 Bugungi motivatsiya\n\n${quoteForToday()}`, { reply_markup: mainKeyboard() });
+    return;
+  }
+  if (command === "countdown" || text === "🎯 Sanagich") {
+    await sendMessage(chatId, `🎄 Yangi yilgacha ${daysToNewYear()} kun qoldi.\n\n🌙 Ramazon sanasini rasmiy taqvim tasdiqlangach qo‘shamiz.\n🎂 Tug‘ilgan kun sanagichi keyingi yangilanishda.`, { reply_markup: mainKeyboard() });
+    return;
+  }
+  if (command === "link") {
+    await sendMessage(chatId, "🔗 Javy web akkauntini Google orqali tasdiqlangan bir martalik ulash havolasi bilan bog‘lashni tayyorlayapmiz. SMS kodi yoki 2FA parolingizni botga yubormang.");
+    return;
+  }
 
   if (command === "start") {
     await sendMessage(chatId, `Assalomu alaykum, ${firstName}! 👋
@@ -322,7 +372,7 @@ server.listen(PORT, "0.0.0.0", async () => {
     const result = await telegram("setWebhook", {
       url: `${publicUrl}/telegram/webhook`,
       secret_token: WEBHOOK_SECRET,
-      allowed_updates: ["message"],
+      allowed_updates: ["message", "business_connection", "business_message", "edited_business_message"],
       drop_pending_updates: false,
     });
     console.log(`Telegram webhook registered for @${botUsername || "bot"}:`, Boolean(result));
