@@ -260,7 +260,7 @@ async function handleUpdate(update) {
   const send = (body, extra = {}) => sendMessage(chatId, body, { ...extra, ...(businessConnectionId ? { business_connection_id: businessConnectionId } : {}) });
 
   if (command === "settime") {
-    const action = text.split(/\\s+/)[1]?.toLowerCase() || "";
+    const action = text.split(/\s+/)[1]?.toLowerCase() || "";
     if (action === "on") {
       timeAutomation.enabled = true;
       timeAutomation.firstName = firstName;
