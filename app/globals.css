@@ -312,3 +312,26 @@ html:not(.dark),body:not(.dark){color-scheme:light}
   .auth-divider{margin:20px 0}
 }
 @media(prefers-reduced-motion:reduce){.auth-page *{animation:none!important;transition:none!important}}
+
+
+/* Minimal responsive composer with a second-row toolbar when text wraps. */
+.composer-shell{align-items:flex-end;gap:4px;padding:7px;transition:border-color .16s ease,background-color .16s ease}
+.composer-shell:focus-within{border-color:#cbd5e1;box-shadow:0 0 0 3px rgba(100,116,139,.08)}
+.dark .composer-shell:focus-within{border-color:#475569;box-shadow:0 0 0 3px rgba(148,163,184,.08)}
+.composer-shell .chat-input{min-height:42px;height:42px;max-height:180px;padding:9px 10px;line-height:24px;align-self:flex-end}
+.composer-tools{display:flex;align-items:center;gap:3px;flex:none}
+.composer-icon{display:grid;place-items:center;width:40px;height:40px;flex:none;border-radius:50%;color:#64748b;transition:background .15s ease,color .15s ease}
+.composer-icon:hover{background:rgba(148,163,184,.14);color:#1e293b}
+.dark .composer-icon{color:#cbd5e1}
+.dark .composer-icon:hover{background:rgba(255,255,255,.08);color:#fff}
+.composer-icon.is-listening{background:rgba(239,68,68,.12);color:#dc2626}
+.send-action{width:40px;height:40px;border-radius:50%;background:#111827!important;color:#fff!important}
+.send-action:hover:not(:disabled){background:#374151!important}
+.send-action:disabled{background:#e5e7eb!important;color:#9ca3af!important;opacity:1!important}
+.dark .send-action{background:#f3f4f6!important;color:#111827!important}
+.dark .send-action:hover:not(:disabled){background:#d1d5db!important}
+.dark .send-action:disabled{background:#343943!important;color:#858b98!important}
+.composer-shell.is-multiline{flex-direction:column;align-items:stretch;gap:2px}
+.composer-shell.is-multiline .chat-input{width:100%;height:auto;min-height:42px;align-self:stretch}
+.composer-shell.is-multiline .composer-tools{justify-content:flex-end;padding:0 2px 1px}
+@media(max-width:480px){.composer-shell{padding:6px}.composer-shell .chat-input{padding-left:9px;padding-right:6px}.composer-icon,.send-action{width:38px;height:38px}}
