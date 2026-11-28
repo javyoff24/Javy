@@ -85,9 +85,9 @@ export const POST = monitoredApi("POST /api/chat", async (request, requestId) =>
   });
 
   const model = typeof body.model === "string" && ALLOWED_MODELS.has(body.model) ? body.model : DEFAULT_MODEL;
-  const customPrompt = typeof body.systemPrompt === "string"
+  const customPrompt = (typeof body.systemPrompt === "string"
     ? body.systemPrompt.slice(0, 4_000)
-    : BASE_PROMPT;
+    : BASE_PROMPT) + " Matematik formulalarni LaTeX sintaksisida yoz: inline formulalar uchun $...$, alohida qatordagi formulalar uchun $...$ ishlat. Kasr, ildiz, daraja, integral, yig'indi, limit, matritsa va tenglamalarni LaTeX bilan formatla. Formulalarni kod blokiga joylama va LaTeX belgilarini oddiy matn sifatida qoldirma. Foydalanuvchi matematik yechim so'rasa, formulani bosqichma-bosqich tushuntir. Kod yoki oddiy matn ichidagi dollar belgilarini matematik formula deb ishlatma.";
   const userMessages = messages.filter((message: any) => message.role === "user");
   const lastUserMessage = userMessages[userMessages.length - 1];
   const lastText = String(lastUserMessage?.content || "").trim();
