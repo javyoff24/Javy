@@ -577,3 +577,26 @@ html:not(.dark),body:not(.dark){color-scheme:light}
 @media(prefers-reduced-motion:reduce){
   .composer-shell .send-action{transition:none}
 }
+
+/* Long-press action menus and selectable chat messages */
+.message-item{touch-action:pan-y;-webkit-user-select:none;user-select:none}
+.message-item .markdown-content,.message-item .markdown-content *{-webkit-user-select:none;user-select:none}
+.message-item.message-selected>div:first-child{outline:2px solid #3B82F6;outline-offset:3px;border-radius:14px}
+.javy-context-menu{width:200px;padding:6px;border:1px solid #e5e7eb;border-radius:14px;background:#fff;color:#18181b;box-shadow:0 12px 36px rgba(0,0,0,.18)}
+.dark .javy-context-menu{border-color:rgba(255,255,255,.12);background:#25262b;color:#f4f4f5;box-shadow:0 12px 36px rgba(0,0,0,.4)}
+.javy-context-menu button{display:flex;width:100%;align-items:center;gap:10px;padding:11px 10px;border-radius:9px;text-align:left;font-size:13px}
+.javy-context-menu button:hover{background:#f4f4f5}
+.dark .javy-context-menu button:hover{background:rgba(255,255,255,.08)}
+.javy-menu-square{width:15px;height:15px;border:1.5px solid currentColor;border-radius:4px}
+.javy-code-block{margin:1rem 0;overflow:hidden;border:1px solid #e5e7eb;border-radius:14px;background:#f8fafc}
+.dark .javy-code-block{border-color:#343741;background:#111318}
+.javy-code-header{display:flex;min-height:38px;align-items:center;justify-content:space-between;padding:0 12px;border-bottom:1px solid #e5e7eb;background:#f1f5f9}
+.dark .javy-code-header{border-color:#343741;background:#1d2027}
+.javy-code-language{display:flex;align-items:center;gap:7px;color:#475569;font-size:11px;font-weight:650;text-transform:lowercase}
+.dark .javy-code-language{color:#cbd5e1}
+.javy-code-plus{display:grid;width:17px;height:17px;place-items:center;border-radius:5px;background:#e2e8f0;color:#475569;font-size:14px;font-weight:700}
+.dark .javy-code-plus{background:#343945;color:#e2e8f0}
+.javy-code-copy{display:grid;width:28px;height:28px;place-items:center;border-radius:7px;color:#64748b}
+.javy-code-copy:hover{background:#e2e8f0;color:#0f172a}
+.dark .javy-code-copy:hover{background:#343945;color:#fff}
+.javy-code-block pre{margin:0!important;padding:14px!important;overflow-x:auto;border:0!important;border-radius:0!important;background:transparent!important}
