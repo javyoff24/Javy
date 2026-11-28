@@ -163,7 +163,9 @@ async function handleUpdate(update) {
   if (!message?.chat?.id) return;
 
   const chatId = message.chat.id;
-  const firstName = message.from?.first_name?.trim() || "foydalanuvchi";
+  const rawName = typeof message.from?.first_name === "string" ? message.from.first_name.trim() : "";
+  const username = typeof message.from?.username === "string" ? message.from.username.trim() : "";
+  const firstName = rawName.length >= 2 ? rawName : username.length >= 2 ? username : "Telegram mehmoni";
   const text = typeof message.text === "string" ? message.text.trim() : "";
   const command = commandOf(text);
 
