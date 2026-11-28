@@ -414,3 +414,8 @@ html:not(.dark),body:not(.dark){color-scheme:light}
  .composer-shell .chat-input{font-size:16px}
 }
 @media(prefers-reduced-motion:reduce){.voice-wave i{animation:none;height:8px}}
+
+/* Keep the action buttons beside the textarea even in multiline mode. */
+.composer-shell.is-multiline{flex-direction:row!important;align-items:flex-end!important}
+.composer-shell.is-multiline .chat-input{width:0!important;flex:1 1 0%;align-self:flex-end!important}
+.composer-shell.is-multiline .composer-tools{justify-content:flex-end;padding:0 0 2px!important}
