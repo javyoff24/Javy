@@ -191,7 +191,7 @@ async function searchOfficialFinance(query: string): Promise<WebSearchResult[]> 
           results.push({
             title: "O‘zbekiston Markaziy banki — AQSh dollari kursi",
             url: "https://cbu.uz/uz/arkhiv-kursov-valyut/json/USD/",
-            snippet: "Sana: " + String(item.Date || "Markaziy bank ma’lumoti") + ". 1 USD = " + String(item.Rate) + " UZS. Kurs Markaziy bankning rasmiy ma’lumotidan olindi.",
+            snippet: "Sana: " + String(item.Date || "Markaziy bank ma’lumoti") + ". 1 USD = " + (Number(item.Rate) / Math.max(1, Number(item.Nominal) || 1)).toLocaleString("en-US") + " UZS. Kurs Markaziy bankning rasmiy ma’lumotidan olindi.",
             domain: "cbu.uz",
           });
         }
