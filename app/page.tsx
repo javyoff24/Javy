@@ -17,20 +17,37 @@ const uid = () => Math.random().toString(36).slice(2, 10);
 const suggestions = ["Next.js nima va u qanday ishlaydi?","Menga haftalik o'qish rejasini tuzib ber","Python'da oddiy kalkulyator yoz","Sun'iy intellektni sodda tushuntir"];
 
 function cleanAssistantText(value: string) {
+  // Explicit math fences are rendered as KaTeX; ordinary code fences stay literal.
+  const mathFences = value.replace(/(^|\n)(\`\`\`|~~~)\s*(math|latex|tex)\s*\n([\s\S]*?)\n\2\s*(?=\n|$)/gi, (_, lineStart, _fence, _language, math) =>
+    lineStart + "$" + "$\n" + math.trim() + "\n" + "$" + "$"
+  );
+
   const codeBlocks: string[] = [];
-  const protectedCode = value.replace(/(\`\`\`[\s\S]*?\`\`\`|~~~[\s\S]*?~~~|\`[^\`\n]*\`)/g, (code) => {
+  const protectedCode = mathFences.replace(/(\`\`\`[\s\S]*?\`\`\`|~~~[\s\S]*?~~~|\`[^\`\n]*\`)/g, (code) => {
     codeBlocks.push(code);
     return "@@JAVY_CODE_" + (codeBlocks.length - 1) + "@@";
   });
+
+  // Normalize standard LaTeX delimiters, including formulas embedded in lists and quotes.
   const normalizedDelimiters = protectedCode
-    .replace(/\\\[([\s\S]*?)\\\]/g, (_, math) => "$" + "$\n" + math.trim() + "\n" + "$" + "$")
+    .replace(/(^|\n)([^\n]*)\\\[([\s\S]*?)\\\]/g, (_, lineStart, before, math) => {
+      const embedded = before.trim().length > 0;
+      return lineStart + before + (embedded ? "$" + math.trim() + "$" : "$" + "$\n" + math.trim() + "\n" + "$" + "$");
+    })
     .replace(/\\\(([\s\S]*?)\\\)/g, (_, math) => "$" + math.trim() + "$");
+
+  // Also accept the legacy [ ... ] formula notation used by earlier Javy responses.
   const normalized = normalizedDelimiters.replace(/(^|\n)([^\n]*)\[\s*([^\]\n]*?(?:\\(?:frac|sqrt|sum|int|lim|pm|begin)|[=^_])[^\]\n]*?)\s*\]/g, (_, lineStart, before, math) => {
     const isEmbedded = before.trim().length > 0;
     return lineStart + before + (isEmbedded ? "$" + math.trim() + "$" : "$" + "$\n" + math.trim() + "\n" + "$" + "$");
   });
+
   const restoredCode = normalized.replace(/@@JAVY_CODE_(\d+)@@/g, (_, index) => codeBlocks[Number(index)]);
-  return restoredCode.replace(/【\s*\d+†L\d+(?:-L?\d+)?】/g, "").replace(/[ \t]{2,}/g, " ").replace(/\n{3,}/g, "\n\n").trim();
+  return restoredCode
+    .replace(/【\s*\d+†L\d+(?:-L?\d+)?】/g, "")
+    .replace(/[ \t]{2,}/g, " ")
+    .replace(/\n{3,}/g, "\n\n")
+    .trim();
 }
 
 
