@@ -17,11 +17,8 @@ const uid = () => Math.random().toString(36).slice(2, 10);
 const suggestions = ["Next.js nima va u qanday ishlaydi?","Menga haftalik o'qish rejasini tuzib ber","Python'da oddiy kalkulyator yoz","Sun'iy intellektni sodda tushuntir"];
 
 function cleanAssistantText(value: string) {
-  const normalized = value
-    .replace(/\\\[([\s\S]*?)\\\]/g, (_, math) => \`\\n$$\\n\${math.trim()}\\n$$\\n\`)
-    .replace(/\\\(([\s\S]*?)\\\)/g, (_, math) => \`$\${math.trim()}$\`)
-    .replace(/(^|\\n)\\s*\\[\\s*([^\\]\\n]*?(?:\\\\(?:frac|sqrt|sum|int|lim|pm|begin)|[=^_])[^\\]\\n]*?)\\s*\\](?=\\s*(?:\\n|$))/g, (_, prefix, math) => \`\${prefix}\\n$$\\n\${math.trim()}\\n$$\`);
-  return normalized.replace(/【\\s*\\d+†L\\d+(?:-L?\\d+)?】/g, "").replace(/[ \\t]{2,}/g, " ").replace(/\\n{3,}/g, "\\n\\n").trim();
+  const normalized = value.replace(/(^|\n)\s*\[\s*([^\]\n]*?(?:\\(?:frac|sqrt|sum|int|lim|pm|begin)|[=^_])[^\]\n]*?)\s*\](?=\s*(?:\n|$))/g, (_, prefix, math) => `${prefix}\n$$\n${math.trim()}\n$$`);
+  return normalized.replace(/【\s*\d+†L\d+(?:-L?\d+)?】/g, "").replace(/[ \t]{2,}/g, " ").replace(/\n{3,}/g, "\n\n").trim();
 }
 
 
