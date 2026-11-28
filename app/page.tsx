@@ -208,9 +208,9 @@ export default function Home() {
     if(!("speechSynthesis" in window) || typeof SpeechSynthesisUtterance==="undefined"){setError("Bu qurilmada ovoz chiqarib o‘qish qo‘llab-quvvatlanmaydi.");return;}
     if(speakingIndex===index){speechRunRef.current++;window.speechSynthesis.cancel();setSpeakingIndex(null);return;}
     speechRunRef.current++;const run=speechRunRef.current;window.speechSynthesis.cancel();
-    const chunks=text.replace(/\s+/g," ").match(/.{1,170}(?:[.!?…]|$)\s*/g)?.map(x=>x.trim()).filter(Boolean) || [text];
+    const words=text.trim().split(/\s+/);const chunks:string[]=[];let part="";for(const word of words){if((part+" "+word).trim().length>150&&part){chunks.push(part);part=word;}else part=(part+" "+word).trim();}if(part)chunks.push(part);
     const voices=window.speechSynthesis.getVoices();
-    const voice=voices.find(v=>/^uz(-|$)/i.test(v.lang))||voices.find(v=>/^ru(-|$)/i.test(v.lang))||voices.find(v=>/^en(-|$)/i.test(v.lang));
+    const voice=voices.find(v=>/^uz(-|$)/i.test(v.lang))||voices.find(v=>v.default)||null;
     const speakChunk=(position:number)=>{
       if(speechRunRef.current!==run)return;
       if(position>=chunks.length){setSpeakingIndex(null);return;}
@@ -220,7 +220,7 @@ export default function Home() {
       utterance.onerror=()=>{if(speechRunRef.current===run){setSpeakingIndex(null);setError("Ovoz ijrosida xatolik. Qurilmadagi matnni ovozga aylantirish (TTS) ovozlarini tekshiring.");}};
       window.speechSynthesis.speak(utterance);
     };
-    setSpeakingIndex(index);speakChunk(0);
+    setSpeakingIndex(index);window.setTimeout(()=>{if(speechRunRef.current===run){window.speechSynthesis.resume();speakChunk(0);}},80);
   }
   function rateMessage(index:number,rating:"up"|"down"){updateChat(activeId,c=>({...c,messages:c.messages.map((m,j)=>j===index?{...m,feedback:m.feedback===rating?undefined:rating}:m),updatedAt:Date.now()}));}
 
@@ -300,7 +300,7 @@ export default function Home() {
     const name = file.name;
     const extension=name.toLowerCase().split(".").pop()||"";
     const rawType = file.type || "application/octet-stream";
-    const type = rawType==="application/octet-stream" ? (extension==="pdf"?"application/pdf":extension==="docx"?"application/vnd.openxmlformats-officedocument.wordprocessingml.document":rawType) : rawType;
+    const type = rawType==="application/octet-stream" ? (extension==="pdf"?"application/pdf":extension==="docx"?"application/vnd.openxmlformats-officedocument.wordprocessingml.document":["txt","md","csv"].includes(extension)?"text/plain":rawType) : rawType;
     if (!isBrowserFile && !file.data) {
       setViewer({ url: "", name, type, content: "Faylning asl nusxasi brauzer xotirasida saqlanmagan. Uni qayta biriktiring." });
       return;
@@ -354,7 +354,7 @@ export default function Home() {
           {error&&<div className="mx-auto mb-3 max-w-3xl rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700 dark:border-red-900/60 dark:bg-red-950/30 dark:text-red-300">{error}</div>}
         </div>
         <div className="composer-area">
-          <input ref={imageInputRef} type="file" multiple accept="image/*" capture="environment" className="hidden" onChange={e=>{const incoming=Array.from(e.target.files||[]);const allowed=incoming.filter(f=>f.size<=2*1024*1024);if(allowed.length!==incoming.length)setError("Har bir rasm 2 MB dan kichik bo‘lishi kerak.");const merged=[...files,...allowed].slice(0,3);if(merged.reduce((sum,f)=>sum+f.size,0)>2_500_000)setError("Bir xabardagi fayllar jami 2.5 MB dan oshmasin.");else setFiles(merged);e.target.value="";setAttachMenuOpen(false);}}/>
+          <input ref={imageInputRef} type="file" multiple accept="image/*" className="hidden" onChange={e=>{const incoming=Array.from(e.target.files||[]);const allowed=incoming.filter(f=>f.size<=2*1024*1024);if(allowed.length!==incoming.length)setError("Har bir rasm 2 MB dan kichik bo‘lishi kerak.");const merged=[...files,...allowed].slice(0,3);if(merged.reduce((sum,f)=>sum+f.size,0)>2_500_000)setError("Bir xabardagi fayllar jami 2.5 MB dan oshmasin.");else setFiles(merged);e.target.value="";setAttachMenuOpen(false);}}/>
           <input ref={fileInputRef} type="file" multiple accept="application/pdf,application/vnd.openxmlformats-officedocument.wordprocessingml.document,.docx,text/plain,text/markdown,text/csv" className="hidden" onChange={e=>{const incoming=Array.from(e.target.files||[]);const allowed=incoming.filter(f=>f.size<=2*1024*1024);if(allowed.length!==incoming.length)setError("Har bir fayl 2 MB dan kichik bo‘lishi kerak.");const merged=[...files,...allowed].slice(0,3);if(merged.reduce((sum,f)=>sum+f.size,0)>2_500_000)setError("Bir xabardagi fayllar jami 2.5 MB dan oshmasin.");else setFiles(merged);e.target.value="";setAttachMenuOpen(false);}}/>
           {files.length>0&&<div className="composer-attachments">{files.map((f,i)=><div key={f.name+i} className="flex items-center gap-2 rounded-xl border border-slate-200 bg-white px-3 py-2 text-xs dark:border-white/10 dark:bg-[#2b2b2b]"><button onClick={()=>openFileViewer(f)} className="flex min-w-0 items-center gap-2"><span className="truncate max-w-[150px]">{f.name}</span><Eye size={14}/></button><button onClick={()=>setFiles(old=>old.filter((_,j)=>j!==i))} aria-label="Faylni olib tashlash"><X size={14}/></button></div>)}</div>}
           <div className="composer-shell">
