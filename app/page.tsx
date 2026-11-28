@@ -23,13 +23,22 @@ function cleanAssistantText(value: string) {
   );
 
   const codeBlocks: string[] = [];
-  const protectedCode = mathFences.replace(/(\`\`\`[\s\S]*?\`\`\`|~~~[\s\S]*?~~~|\`[^\`\n]*\`)/g, (code) => {
+  // Protect fenced code blocks first, so their contents remain untouched.
+  const protectedCode = mathFences.replace(/(\`\`\`[\s\S]*?\`\`\`|~~~[\s\S]*?~~~)/g, (code) => {
     codeBlocks.push(code);
     return "@@JAVY_CODE_" + (codeBlocks.length - 1) + "@@";
   });
 
+  // Render LaTeX expressions wrapped in single backticks as math.
+  // Ordinary inline code (for example, \`const x = 1\`) remains code.
+  const inlineMath = protectedCode.replace(/\`([^\`\n]+)\`/g, (code, math) => {
+    const expression = math.trim();
+    const looksLikeMath = /\\(?:frac|dfrac|tfrac|sqrt|sum|int|lim|prod|pm|times|cdot|alpha|beta|pi|theta|begin)|[=^_]/.test(expression);
+    return looksLikeMath ? "$" + expression + "$" : code;
+  });
+
   // Normalize standard LaTeX delimiters, including formulas embedded in lists and quotes.
-  const normalizedDelimiters = protectedCode
+  const normalizedDelimiters = inlineMath
     .replace(/(^|\n)([^\n]*)\\\[([\s\S]*?)\\\]/g, (_, lineStart, before, math) => {
       const embedded = before.trim().length > 0;
       return lineStart + before + (embedded ? "$" + math.trim() + "$" : "$" + "$\n" + math.trim() + "\n" + "$" + "$");
