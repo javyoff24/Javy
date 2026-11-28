@@ -419,3 +419,161 @@ html:not(.dark),body:not(.dark){color-scheme:light}
 .composer-shell.is-multiline{flex-direction:row!important;align-items:flex-end!important}
 .composer-shell.is-multiline .chat-input{width:0!important;flex:1 1 0%;align-self:flex-end!important}
 .composer-shell.is-multiline .composer-tools{justify-content:flex-end;padding:0 0 2px!important}
+
+
+
+/* Javy two-row chat composer */
+.composer-area{
+  box-sizing:border-box;
+  width:calc(100% - 24px);
+  max-width:720px;
+  margin:0 auto;
+  padding:8px 0 calc(8px + env(safe-area-inset-bottom,0px));
+  flex:none;
+}
+.composer-attachments{
+  display:flex;
+  flex-wrap:wrap;
+  gap:8px;
+  width:100%;
+  margin:0 auto 8px;
+}
+.composer-shell{
+  box-sizing:border-box;
+  display:flex!important;
+  flex-direction:column!important;
+  align-items:stretch!important;
+  gap:8px!important;
+  width:100%;
+  max-width:720px;
+  min-height:0!important;
+  margin:0 auto;
+  padding:12px 16px!important;
+  overflow:hidden;
+  border:1px solid transparent!important;
+  border-radius:28px!important;
+  background:#F4F4F5!important;
+  box-shadow:none!important;
+}
+.dark .composer-shell{
+  background:#2f2f2f!important;
+  border-color:transparent!important;
+}
+.composer-shell:focus-within{
+  border-color:transparent!important;
+  box-shadow:none!important;
+}
+.composer-shell .chat-input{
+  display:block;
+  box-sizing:border-box;
+  width:100%!important;
+  min-width:0;
+  min-height:24px!important;
+  max-height:160px!important;
+  height:24px;
+  margin:0;
+  padding:0!important;
+  flex:none!important;
+  align-self:stretch!important;
+  resize:none!important;
+  border:0!important;
+  outline:none!important;
+  background:transparent!important;
+  color:inherit!important;
+  font-size:16px!important;
+  line-height:1.5!important;
+  overflow-y:auto;
+  overflow-wrap:anywhere;
+  word-break:break-word;
+  scrollbar-width:none;
+  overscroll-behavior:contain;
+  box-shadow:none!important;
+}
+.composer-shell .chat-input::-webkit-scrollbar{display:none}
+.composer-shell .chat-input::placeholder{color:#8b8b91;opacity:1}
+.dark .composer-shell .chat-input::placeholder{color:#a1a1aa}
+.composer-toolbar{
+  display:flex;
+  justify-content:space-between;
+  align-items:center;
+  width:100%;
+  min-height:40px;
+  flex:none;
+}
+.composer-toolbar-right{
+  display:flex;
+  align-items:center;
+  justify-content:flex-end;
+  gap:8px;
+}
+.composer-shell .composer-icon,
+.composer-shell .send-action{
+  box-sizing:border-box;
+  display:grid;
+  place-items:center;
+  width:40px!important;
+  height:40px!important;
+  min-width:40px;
+  flex:0 0 40px;
+  padding:0;
+  border:0;
+  border-radius:50%!important;
+}
+.composer-shell .composer-icon{
+  color:#27272a;
+  background:transparent!important;
+}
+.composer-shell .composer-icon:hover{
+  background:rgba(24,24,27,.08)!important;
+}
+.dark .composer-shell .composer-icon{color:#f4f4f5}
+.dark .composer-shell .composer-icon:hover{background:rgba(255,255,255,.10)!important}
+.composer-shell .composer-icon.is-listening{
+  color:#dc2626;
+  background:rgba(239,68,68,.12)!important;
+}
+.composer-shell .send-action{
+  color:#fff!important;
+  background:#3B82F6!important;
+  box-shadow:none!important;
+  opacity:1;
+  cursor:pointer;
+  transition:opacity .15s ease,background-color .15s ease,transform .15s ease;
+}
+.composer-shell .send-action:hover:not(:disabled){background:#2563EB!important}
+.composer-shell .send-action:active:not(:disabled){transform:scale(.95)}
+.composer-shell .send-action:disabled{
+  color:#fff!important;
+  background:#3B82F6!important;
+  opacity:.4!important;
+  cursor:not-allowed;
+}
+.composer-searching{
+  display:flex;
+  align-items:center;
+  gap:8px;
+  width:100%;
+  margin:8px auto 0;
+  padding:0 4px;
+  color:#2563eb;
+  font-size:12px;
+}
+.dark .composer-searching{color:#93c5fd}
+.composer-disclaimer{
+  width:100%;
+  margin:8px auto 0;
+  color:#9ca3af;
+  font-size:10px;
+  line-height:1.5;
+  text-align:center;
+}
+@media(max-width:640px){
+  .composer-area{
+    padding-top:8px;
+    padding-bottom:calc(8px + env(safe-area-inset-bottom,0px));
+  }
+  .composer-shell{padding:12px 16px!important}
+}
+@media(prefers-reduced-motion:reduce){
+  .composer-shell .send-action{transition:none}
+}
