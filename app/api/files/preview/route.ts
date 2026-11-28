@@ -7,7 +7,7 @@ export async function POST(request: Request) {
   try {
     const body = await request.json();
     const data = typeof body?.data === "string" ? body.data : "";
-    const match = data.match(/^data:([^;,]+);base64,([\\s\\S]+)$/);
+    const match = data.match(/^data:([^;,]+);base64,([\s\S]+)$/);
     if (!match || !/\.docx$/i.test(String(body?.name || ""))) {
       return NextResponse.json({ error: "Yaroqli DOCX hujjat yuboring." }, { status: 400 });
     }
