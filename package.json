@@ -23,7 +23,8 @@
     "pdfjs-dist": "^4.10.38",
     "katex": "^0.16.22",
     "rehype-katex": "^7.0.1",
-    "remark-math": "^6.0.0"
+    "remark-math": "^6.0.0",
+    "next-auth": "5.0.0-beta.32"
   },
   "devDependencies": {
     "@types/node": "^22.10.5",
