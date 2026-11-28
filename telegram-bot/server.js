@@ -10,10 +10,8 @@ const MAX_BODY_BYTES = 1024 * 1024;
 const MAX_MESSAGE_LENGTH = 20_000;
 const seenUpdates = new Set();
 let botUsername = "";
-const REDIS_URL = (process.env.UPSTASH_REDIS_REST_URL || process.env.UPSTASH_KV_REST_API_URL || "").trim().replace(/\/$/, "");
-const REDIS_TOKEN = (process.env.UPSTASH_REDIS_REST_TOKEN || process.env.UPSTASH_KV_REST_API_TOKEN || "").trim();
-const AUTOMATION_KEY = "javy:telegram:automation:v1";
 let automation = { enabled: true, name: "Javy", bio: "Sun'iy intellekt yordamchingiz" };
+let timeAutomation = { enabled: false, firstName: "" };
 let automationTimer;
 
 function sendJson(res, status, body) {
@@ -109,45 +107,6 @@ function daysToNewYear() {
   return Math.max(0, Math.ceil((target - now) / 86400000));
 }
 
-async function redisCommand(command) {
-  if (!REDIS_URL || !REDIS_TOKEN) return null;
-  const response = await fetch(REDIS_URL, {
-    method: "POST",
-    headers: { Authorization: `Bearer ${REDIS_TOKEN}`, "Content-Type": "application/json" },
-    body: JSON.stringify(command),
-    signal: AbortSignal.timeout(8000),
-  });
-  const data = await response.json().catch(() => ({}));
-  if (!response.ok || data.error) throw new Error(data.error || "Redis so'rovi bajarilmadi");
-  return data.result;
-}
-
-async function loadAutomation() {
-  try {
-    const saved = await redisCommand(["GET", AUTOMATION_KEY]);
-    if (typeof saved === "string") {
-      const parsed = JSON.parse(saved);
-      automation = {
-        enabled: parsed.enabled !== false,
-        name: typeof parsed.name === "string" && parsed.name.trim() ? parsed.name.trim().slice(0, 50) : "Javy",
-        bio: typeof parsed.bio === "string" ? parsed.bio.slice(0, 300) : "Sun'iy intellekt yordamchingiz",
-      };
-    }
-  } catch (error) {
-    console.error("Automation settings load failed:", error.message);
-  }
-}
-
-async function saveAutomation() {
-  if (!REDIS_URL || !REDIS_TOKEN) throw new Error("Sozlamalarni doimiy saqlash uchun Render Environment’da UPSTASH_REDIS_REST_URL va UPSTASH_REDIS_REST_TOKEN kerak.");
-  try {
-    await redisCommand(["SET", AUTOMATION_KEY, JSON.stringify(automation)]);
-  } catch (error) {
-    console.error("Automation settings save failed:", error.message);
-    throw new Error("Sozlamalarni Redis'ga saqlab bo'lmadi. Render'dagi Upstash env qiymatlarini tekshiring.");
-  }
-}
-
 function tashkentClock() {
   return new Intl.DateTimeFormat("en-GB", {
     timeZone: "Asia/Tashkent", hour: "2-digit", minute: "2-digit", hourCycle: "h23",
@@ -155,14 +114,15 @@ function tashkentClock() {
 }
 
 async function refreshBotProfile() {
-  if (!automation.enabled || !BOT_TOKEN) return;
+  if (!timeAutomation.enabled || !BOT_TOKEN) return;
   const clock = tashkentClock();
-  const description = `${automation.name} | ${clock} (Toshkent) • ${automation.bio}`.slice(0, 512);
-  const shortDescription = `${automation.name} • ${clock} (Toshkent)`.slice(0, 120);
+  const displayName = timeAutomation.firstName || "Telegram foydalanuvchisi";
+  const description = `${displayName} | ${clock}`.slice(0, 512);
+  const shortDescription = `${displayName} | ${clock}`.slice(0, 120);
   try {
     await telegram("setMyDescription", { description });
     await telegram("setMyShortDescription", { short_description: shortDescription });
-    console.log("Bot profile automation updated:", clock);
+    console.log("Bot time bio updated:", clock);
   } catch (error) {
     console.error("Bot profile automation failed:", error.message);
   }
@@ -170,10 +130,11 @@ async function refreshBotProfile() {
 
 function startAutomation() {
   if (automationTimer) clearInterval(automationTimer);
+  if (!timeAutomation.enabled) return;
   refreshBotProfile().catch((error) => console.error(error));
   automationTimer = setInterval(() => {
     refreshBotProfile().catch((error) => console.error(error));
-  }, 5 * 60 * 1000);
+  }, 60 * 1000);
   automationTimer.unref?.();
 }
 
@@ -192,7 +153,7 @@ Buyruqlar:
 /setbio Matn — bio matnini o‘zgartirish
 /status — avtomatlashtirish holati
 
-Bio har 5 daqiqada yangilanadi.`;
+Bio /settime on bilan yoqiladi va har daqiqada yangilanadi.`;
 }
 
 function commandOf(text) {
@@ -298,11 +259,33 @@ async function handleUpdate(update) {
   const businessConnectionId = message.business_connection_id || "";
   const send = (body, extra = {}) => sendMessage(chatId, body, { ...extra, ...(businessConnectionId ? { business_connection_id: businessConnectionId } : {}) });
 
+  if (command === "settime") {
+    const action = text.split(/\\s+/)[1]?.toLowerCase() || "";
+    if (action === "on") {
+      timeAutomation.enabled = true;
+      timeAutomation.firstName = firstName;
+      startAutomation();
+      await send(`🟢 Vaqt avtomatik yangilanishi yoqildi.\nBot bio: ${firstName} | ${tashkentClock()}`, { reply_markup: mainKeyboard() });
+      return;
+    }
+    if (action === "off") {
+      timeAutomation.enabled = false;
+      if (automationTimer) clearInterval(automationTimer);
+      automationTimer = undefined;
+      await telegram("setMyDescription", { description: "" }).catch((error) => console.error("Bio reset failed:", error.message));
+      await telegram("setMyShortDescription", { short_description: "" }).catch((error) => console.error("Short bio reset failed:", error.message));
+      await send("🔴 Vaqt avtomatik yangilanishi o‘chirildi.", { reply_markup: mainKeyboard() });
+      return;
+    }
+    await send("Foydalanish: /settime on yoki /settime off");
+    return;
+  }
+
   if (command === "automation" || text === "⚙️ Automation") {
     const action = text.split(/\s+/)[1]?.toLowerCase() || "";
     if (command === "automation" && ["on", "off"].includes(action)) {
       automation.enabled = action === "on";
-      try { await saveAutomation(); } catch (error) { await send(error.message); return; }
+      
       if (automation.enabled) startAutomation();
       else {
         await telegram("setMyDescription", { description: automation.bio.slice(0, 512) }).catch(() => {});
@@ -321,7 +304,7 @@ async function handleUpdate(update) {
       return;
     }
     automation.name = nextName;
-    try { await saveAutomation(); } catch (error) { await send(error.message); return; }
+    
     if (automation.enabled) await refreshBotProfile();
     await send(`Bot nomi saqlandi: ${nextName}`, { reply_markup: mainKeyboard() });
     return;
@@ -333,7 +316,7 @@ async function handleUpdate(update) {
       return;
     }
     automation.bio = nextBio;
-    try { await saveAutomation(); } catch (error) { await send(error.message); return; }
+    
     if (automation.enabled) await refreshBotProfile();
     await send("Bot bio matni saqlandi.", { reply_markup: mainKeyboard() });
     return;
@@ -512,13 +495,13 @@ server.listen(PORT, "0.0.0.0", async () => {
   }
 
   try {
-    await loadAutomation();
     const me = await telegram("getMe", {});
     botUsername = me.username || "";
     await telegram("setMyCommands", {
       commands: [
         { command: "start", description: "Botni boshlash" },
         { command: "automation", description: "Avtomatlashtirish sozlamalari" },
+        { command: "settime", description: "Bio’da ism va vaqtni yoqish/o‘chirish" },
         { command: "setname", description: "Bot nomini o'zgartirish" },
         { command: "setbio", description: "Bot bio matnini o'zgartirish" },
         { command: "status", description: "Automation holatini ko'rish" },
@@ -536,7 +519,7 @@ server.listen(PORT, "0.0.0.0", async () => {
       drop_pending_updates: false,
     });
     console.log(`Telegram webhook registered for @${botUsername || "bot"}:`, Boolean(result));
-    startAutomation();
+    if (timeAutomation.enabled) startAutomation();
   } catch (error) {
     console.error("Telegram startup configuration failed:", error.message);
   }
