@@ -158,3 +158,23 @@ html:not(.dark),body:not(.dark){color-scheme:light}
 .markdown-content .katex{font-size:1.04em}
 .markdown-content .katex-display>.katex{font-size:1.12em}
 .dark .markdown-content .katex{color:#f1f5f9}
+
+
+/* Responsive chat composer and refined settings dialog. */
+.chat-input{caret-color:#2563eb;scrollbar-width:thin;overscroll-behavior:contain;transition:color .15s ease}
+.chat-input:focus{outline:none!important;box-shadow:none!important}
+.composer-shell{contain:layout style;transition:border-color .16s ease,background-color .16s ease}
+.send-action{background:transparent!important;box-shadow:none!important;transform:none!important}
+.send-action:hover:not(:disabled){background:rgba(148,163,184,.16)!important}
+.dark .send-action:hover:not(:disabled){background:rgba(255,255,255,.09)!important}
+.send-action:active:not(:disabled){transform:scale(.94)!important}
+.settings-panel{width:min(100%,460px);padding:22px;border-radius:24px;box-shadow:0 24px 80px rgba(15,23,42,.2);backdrop-filter:blur(18px)}
+.settings-panel label{color:#475569;font-size:12px;font-weight:650;letter-spacing:.025em}
+.dark .settings-panel label{color:#aeb6c5}
+.settings-panel select,.settings-panel textarea{width:100%;border:1px solid #e2e8f0;border-radius:13px;padding:12px 13px;font-size:13px;line-height:1.55;transition:border-color .15s ease,box-shadow .15s ease}
+.settings-panel textarea{min-height:112px;resize:vertical}
+.settings-panel select:focus,.settings-panel textarea:focus{outline:none;border-color:#818cf8;box-shadow:0 0 0 3px rgba(99,102,241,.12)}
+.dark .settings-panel select,.dark .settings-panel textarea{border-color:#3b404c;background:#252831;color:#f3f4f6}
+.settings-panel button{transition:background-color .15s ease,border-color .15s ease,transform .15s ease}
+@media(max-width:480px){.settings-panel{padding:18px;border-radius:20px}.composer-shell{gap:5px;padding:6px}.chat-input{padding-left:8px;padding-right:8px}}
+@media(prefers-reduced-motion:reduce){.chat-input,.composer-shell,.settings-panel select,.settings-panel textarea{transition:none}}
