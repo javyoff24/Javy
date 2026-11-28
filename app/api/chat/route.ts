@@ -1,6 +1,7 @@
 import Groq from "groq-sdk";
 import { auth } from "../../../auth";
 import pdf from "pdf-parse";
+import mammoth from "mammoth";
 import { checkRateLimit, monitoredApi } from "../../lib/api-monitor";
 import { searchImages, searchWeb, shouldSearchWeb } from "../../lib/internet-search";
 
@@ -63,17 +64,26 @@ export const POST = monitoredApi("POST /api/chat", async (request, requestId) =>
   try {
     for (const file of attachments) {
       const match = file.data.match(/^data:([^;,]+);base64,([\s\S]+)$/);
-      if (!match || match[1] !== file.type) throw new Error("Fayl ma’lumotlari noto‘g‘ri.");
+      if (!match) throw new Error("Fayl ma’lumotlari noto‘g‘ri.");
       const buffer = Buffer.from(match[2], "base64");
-      if (file.type.startsWith("image/") && ["image/jpeg","image/png","image/webp"].includes(file.type)) {
+      const mime = match[1].toLowerCase();
+      const extension = file.name.toLowerCase().split(".").pop() || "";
+      if (mime.startsWith("image/") && ["image/jpeg","image/png","image/webp"].includes(mime)) {
         imageParts.push({ type: "image_url", image_url: { url: file.data } });
-      } else if (file.type === "application/pdf") {
+      } else if (mime === "application/pdf" || extension === "pdf") {
         const parsed = await pdf(buffer);
-        documentContext += "\n\nPDF: " + file.name + "\n" + parsed.text.slice(0, 80_000);
-      } else if (["text/plain","text/markdown","text/csv"].includes(file.type)) {
+        const extracted = String(parsed?.text || "").trim();
+        if (!extracted) throw new Error("PDF ichidan matn topilmadi. Bu skanerlangan rasmli PDF bo‘lishi mumkin; hozircha matnli PDF yuklang.");
+        documentContext += "\n\nPDF: " + file.name + "\n" + extracted.slice(0, 80_000);
+      } else if (extension === "docx" || mime === "application/vnd.openxmlformats-officedocument.wordprocessingml.document") {
+        const parsed = await mammoth.extractRawText({ buffer });
+        const extracted = String(parsed?.value || "").trim();
+        if (!extracted) throw new Error("DOCX fayl ichidan matn topilmadi.");
+        documentContext += "\n\nWord hujjati: " + file.name + "\n" + extracted.slice(0, 80_000);
+      } else if (["txt","md","csv"].includes(extension) || ["text/plain","text/markdown","text/csv"].includes(mime)) {
         documentContext += "\n\nFayl: " + file.name + "\n" + buffer.toString("utf8").slice(0, 80_000);
       } else {
-        throw new Error("Faqat JPG, PNG, WEBP, PDF, TXT, MD va CSV fayllari qo‘llab-quvvatlanadi.");
+        throw new Error("Faqat JPG, PNG, WEBP, PDF, DOCX, TXT, MD va CSV fayllari qo‘llab-quvvatlanadi.");
       }
     }
   } catch (fileError: any) {
@@ -85,13 +95,17 @@ export const POST = monitoredApi("POST /api/chat", async (request, requestId) =>
       const textContent = message.content + (documentContext ? "\n\nBiriktirilgan hujjat matni quyida. Hujjatni tahlil qilib, foydalanuvchi savoliga javob ber:\n" + documentContext : "");
       return {
         role: message.role,
-        content: textContent,
+        content: [
+          { type: "text", text: textContent },
+          ...imageParts,
+        ],
       };
     }
     return { role: message.role, content: message.content };
   });
 
-  const model = typeof body.model === "string" && ALLOWED_MODELS.has(body.model) ? body.model : DEFAULT_MODEL;
+  const requestedModel = typeof body.model === "string" && ALLOWED_MODELS.has(body.model) ? body.model : DEFAULT_MODEL;
+  const model = imageParts.length ? "qwen/qwen3.8-27b" : requestedModel;
   const customPrompt = (typeof body.systemPrompt === "string"
     ? body.systemPrompt.slice(0, 4_000)
     : BASE_PROMPT) + " MATEMATIK FORMULA QOIDASI (qat’iy): inline formula uchun faqat $...$, alohida qatordagi formula uchun faqat $$...$$ ishlat. Hech qachon formulani oddiy [ ... ] yoki ( ... ) qavslarida yozma; \\[...\\] va \\(...\\) delimitrlaridan ham foydalanma. Masalan, kvadrat tenglama formulasi aynan $$ x=\\frac{-b\\pm\\sqrt{b^{2}-4ac}}{2a} $$ ko‘rinishida bo‘lsin. LaTeX buyruqlarini, masalan \\frac va \\sqrt ni saqla; formulani kod blokiga joylama. Kasr, ildiz, daraja, integral, yig‘indi, limit, matritsa va tenglamalarni LaTeX bilan formatla. Foydalanuvchi matematik yechim so‘rasa, formulani bosqichma-bosqich tushuntir. Kod yoki oddiy matn ichidagi dollar belgilarini matematik formula deb ishlatma.";
