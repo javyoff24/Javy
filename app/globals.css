@@ -600,3 +600,18 @@ html:not(.dark),body:not(.dark){color-scheme:light}
 .javy-code-copy:hover{background:#e2e8f0;color:#0f172a}
 .dark .javy-code-copy:hover{background:#343945;color:#fff}
 .javy-code-block pre{margin:0!important;padding:14px!important;overflow-x:auto;border:0!important;border-radius:0!important;background:transparent!important}
+
+
+/* Image attachments and dedicated image-analysis motion. */
+.image-message-attachment{display:block;overflow:hidden;max-width:190px;padding:3px;border:1px solid var(--line);border-radius:13px;background:var(--panel);animation:image-attachment-in .24s ease-out both}
+.image-message-attachment img{display:block;max-height:150px;max-width:100%;object-fit:cover;border-radius:10px}
+@keyframes image-attachment-in{from{opacity:0;transform:translateY(7px) scale(.97)}to{opacity:1;transform:translateY(0) scale(1)}}
+.image-analysis-indicator{display:inline-flex;align-items:center;gap:10px;padding:10px 13px;border:1px solid rgba(99,102,241,.2);border-radius:14px;background:rgba(99,102,241,.06);color:#64748b;font-size:13px;animation:message-enter .25s ease-out both}
+.dark .image-analysis-indicator{color:#c4c9d4;background:rgba(99,102,241,.1);border-color:rgba(129,140,248,.22)}
+.image-scan-icon{position:relative;display:grid;place-items:center;width:28px;height:28px;border-radius:9px;background:rgba(99,102,241,.12);color:#6366f1;overflow:hidden}
+.image-scan-icon i{position:absolute;left:2px;right:2px;height:2px;background:#818cf8;box-shadow:0 0 8px #818cf8;animation:image-scan 1.25s ease-in-out infinite}
+.image-scan-track{width:42px;height:3px;overflow:hidden;border-radius:9px;background:rgba(129,140,248,.2)}
+.image-scan-track i{display:block;width:45%;height:100%;border-radius:9px;background:#818cf8;animation:image-progress 1.2s ease-in-out infinite}
+@keyframes image-scan{0%,100%{top:3px;opacity:.45}50%{top:23px;opacity:1}}
+@keyframes image-progress{from{transform:translateX(-110%)}to{transform:translateX(230%)}}
+@media(prefers-reduced-motion:reduce){.image-message-attachment,.image-analysis-indicator,.image-scan-icon i,.image-scan-track i{animation:none}}
