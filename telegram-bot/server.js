@@ -188,6 +188,12 @@ async function getJavyReply(message, guestName) {
 }
 
 async function handleUpdate(update) {
+  if (update.business_connection) {
+    const connection = update.business_connection;
+    console.log("Telegram Business connection:", connection.is_enabled ? "enabled" : "disabled", connection.user?.id || "unknown user");
+    return;
+  }
+
   const message = update.message || update.business_message;
   if (!message?.chat?.id) return;
 
@@ -197,6 +203,8 @@ async function handleUpdate(update) {
   const firstName = rawName.length >= 2 ? rawName : username.length >= 2 ? username : "Telegram mehmoni";
   const text = typeof message.text === "string" ? message.text.trim() : "";
   const command = commandOf(text);
+  const businessConnectionId = message.business_connection_id || "";
+  const send = (body, extra = {}) => sendMessage(chatId, body, { ...extra, ...(businessConnectionId ? { business_connection_id: businessConnectionId } : {}) });
 
   if (command === "profile" || text === "👤 Profil") {
     await sendMessage(chatId, `👤 Profil\n\nIsm: ${firstName}\nUsername: ${username ? "@" + username : "yo‘q"}\nTelegram ID: ${message.from?.id || "—"}\nVaqt: ${tashkentNow()}\nJavy akkaunti: /link orqali ulash haqida ma’lumot oling.`, { reply_markup: mainKeyboard() });
@@ -289,11 +297,11 @@ Buyruqlar:
     typingTimer.unref?.();
 
     const answer = await getJavyReply(prompt, firstName);
-    await sendMessage(chatId, answer, businessConnectionId ? { business_connection_id: businessConnectionId } : {});
+    await send(answer);
   } catch (error) {
     console.error("Javy Telegram error:", error);
     const messageText = error instanceof Error ? error.message : "Noma'lum xatolik yuz berdi.";
-    await sendMessage(chatId, `Kechirasiz, ${messageText}`);
+    await send(`Kechirasiz, ${messageText}`);
   } finally {
     if (typingTimer) clearInterval(typingTimer);
   }
