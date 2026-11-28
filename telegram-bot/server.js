@@ -51,7 +51,10 @@ async function telegram(method, payload) {
   return data.result;
 }
 
-function mainKeyboard() {\n  return {\n    keyboard: [\n      [{ text: "👤 Profil" }, { text: "🕒 Vaqt" }],\n      [{ text: "⚙️ Automation" }, { text: "💡 Motivatsiya" }],\n      [{ text: "🎯 Sanagich" }, { text: "📊 Status" }],\n      [{ text: "❓ Yordam" }, { text: "🤖 Javy haqida" }],
+function mainKeyboard() {
+  return {
+    keyboard: [
+      [{ text: "👤 Profil" }, { text: "🕒 Vaqt" }],\n      [{ text: "⚙️ Automation" }, { text: "💡 Motivatsiya" }],\n      [{ text: "🎯 Sanagich" }, { text: "📊 Status" }],\n      [{ text: "❓ Yordam" }, { text: "🤖 Javy haqida" }],
     ],
     resize_keyboard: true,
     is_persistent: true,
@@ -133,6 +136,7 @@ async function loadAutomation() {
 }
 
 async function saveAutomation() {
+  if (!REDIS_URL || !REDIS_TOKEN) throw new Error("Sozlamalarni doimiy saqlash uchun Render Environment’da UPSTASH_REDIS_REST_URL va UPSTASH_REDIS_REST_TOKEN kerak.");
   try {
     await redisCommand(["SET", AUTOMATION_KEY, JSON.stringify(automation)]);
   } catch (error) {
@@ -292,7 +296,7 @@ async function handleUpdate(update) {
   const send = (body, extra = {}) => sendMessage(chatId, body, { ...extra, ...(businessConnectionId ? { business_connection_id: businessConnectionId } : {}) });
 
   if (command === "automation" || text === "⚙️ Automation") {
-    const action = text.split(/\\s+/)[1]?.toLowerCase() || "";
+    const action = text.split(/\s+/)[1]?.toLowerCase() || "";
     if (command === "automation" && ["on", "off"].includes(action)) {
       automation.enabled = action === "on";
       try { await saveAutomation(); } catch (error) { await send(error.message); return; }
@@ -308,7 +312,7 @@ async function handleUpdate(update) {
     return;
   }
   if (command === "setname") {
-    const nextName = text.replace(/^\\/setname(?:@\\w+)?\\s*/i, "").trim();
+    const nextName = text.replace(/^\/setname(?:@\w+)?\s*/i, "").trim();
     if (!nextName || nextName.length > 50) {
       await send("Foydalanish: /setname Javy AI\\nNom 1–50 belgi bo‘lishi kerak.");
       return;
@@ -320,7 +324,7 @@ async function handleUpdate(update) {
     return;
   }
   if (command === "setbio") {
-    const nextBio = text.replace(/^\\/setbio(?:@\\w+)?\\s*/i, "").trim();
+    const nextBio = text.replace(/^\/setbio(?:@\w+)?\s*/i, "").trim();
     if (!nextBio || nextBio.length > 300) {
       await send("Foydalanish: /setbio Sun'iy intellekt yordamchingiz\\nMatn 1–300 belgi bo‘lsin.");
       return;
