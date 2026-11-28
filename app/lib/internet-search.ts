@@ -186,6 +186,15 @@ export async function searchWeb(query: string, limit = 7): Promise<WebSearchResu
 
   const providers = [
     async () => {
+      const url = new URL("https://news.google.com/rss/search");
+      url.searchParams.set("q", normalized);
+      url.searchParams.set("hl", "uz");
+      url.searchParams.set("gl", "UZ");
+      url.searchParams.set("ceid", "UZ:uz");
+      const xml = await fetchText(url.toString(), "application/rss+xml,application/xml,text/xml");
+      return parseBingRss(xml, limit);
+    },
+    async () => {
       const url = "https://html.duckduckgo.com/html/?" + params.toString();
       const html = await fetchText(url, "text/html,application/xhtml+xml");
       return parseDuckDuckGo(html, limit);
