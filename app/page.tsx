@@ -33,7 +33,7 @@ function cleanAssistantText(value: string) {
   // Ordinary inline code (for example, \`const x = 1\`) remains code.
   const inlineMath = protectedCode.replace(/\`([^\`\n]+)\`/g, (code, math) => {
     const expression = math.trim();
-    const looksLikeMath = /\\(?:frac|dfrac|tfrac|sqrt|sum|int|lim|prod|pm|times|cdot|alpha|beta|pi|theta|begin)|[=^_]/.test(expression);
+    const looksLikeMath = /\\(?:frac|dfrac|tfrac|sqrt|sum|int|lim|prod|pm|times|cdot|alpha|beta|pi|theta|begin)|^[a-zA-Z](?:_[a-zA-Z0-9]+)?\s*(?:=|<|>)\s*[^;{}]+$|[a-zA-Z]\s*\^\s*\{?/.test(expression);
     return looksLikeMath ? "$" + expression + "$" : code;
   });
 
