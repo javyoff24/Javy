@@ -68,8 +68,9 @@ export const POST = monitoredApi("POST /api/chat", async (request, requestId) =>
       const buffer = Buffer.from(match[2], "base64");
       const mime = match[1].toLowerCase();
       const extension = file.name.toLowerCase().split(".").pop() || "";
-      if (mime.startsWith("image/") && ["image/jpeg","image/png","image/webp"].includes(mime)) {
-        imageParts.push({ type: "image_url", image_url: { url: file.data } });
+      const inferredMime = mime === "application/octet-stream" ? ({ jpg: "image/jpeg", jpeg: "image/jpeg", png: "image/png", webp: "image/webp" } as Record<string,string>)[extension] || mime : mime;
+      if (inferredMime.startsWith("image/") && ["image/jpeg","image/png","image/webp"].includes(inferredMime)) {
+        imageParts.push({ type: "image_url", image_url: { url: `data:${inferredMime};base64,${match[2]}` } });
       } else if (mime === "application/pdf" || extension === "pdf") {
         const parsed = await pdf(buffer);
         const extracted = String(parsed?.text || "").trim();
