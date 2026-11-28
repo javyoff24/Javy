@@ -187,7 +187,7 @@ export const POST = monitoredApi("POST /api/chat", async (request, requestId) =>
     const encoder = new TextEncoder();
     const stream = new ReadableStream<Uint8Array>({
       async start(controller) {
-        const send = (payload: unknown) => controller.enqueue(encoder.encode("data: " + JSON.stringify(payload) + "\\n\\n"));
+        const send = (payload: unknown) => controller.enqueue(encoder.encode("data: " + JSON.stringify(payload) + "\n\n"));
         try {
           let hasContent = false;
           for await (const chunk of completion as any) {
