@@ -1,5 +1,6 @@
 @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap');
 @import "highlight.js/styles/github-dark.css";
+@import "katex/dist/katex.min.css";
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
@@ -151,3 +152,10 @@ html:not(.dark),body:not(.dark){color-scheme:light}
 .pdf-page-label{padding:6px 10px;background:#f8fafc;color:#64748b;font-size:11px;border-bottom:1px solid #e5e7eb}
 .pdf-page-canvas{display:block;max-width:100%;height:auto}
 @media(max-width:640px){.pdf-pages{align-items:flex-start;padding:8px}.pdf-page{max-width:calc(100vw - 56px)}.pdf-page-canvas{max-width:100%;height:auto!important}}
+
+
+/* Mathematical notation rendered by KaTeX in assistant messages. */
+.markdown-content .katex-display{max-width:100%;overflow-x:auto;overflow-y:hidden;padding:.55rem .2rem;margin:1rem 0;-webkit-overflow-scrolling:touch}
+.markdown-content .katex{font-size:1.04em}
+.markdown-content .katex-display>.katex{font-size:1.12em}
+.dark .markdown-content .katex{color:#f1f5f9}
