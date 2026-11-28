@@ -5,6 +5,7 @@ export type WebSearchResult = {
   url: string;
   snippet: string;
   domain: string;
+  publishedAt?: string;
 };
 
 const cache = new Map<string, { expiresAt: number; results: WebSearchResult[] }>();
@@ -81,7 +82,10 @@ function parseBingRss(xml: string, limit: number): WebSearchResult[] {
     const url = unwrapUrl(rawLink);
     if (!title || !url || output.some((entry) => entry.url === url)) continue;
     const snippet = cleanText(item.match(/<description>([\s\S]*?)<\/description>/i)?.[1] || "");
-    output.push({ title, url, snippet: snippet.slice(0, 500), domain: domainOf(url) });
+    const rawDate = cleanText(item.match(/<pubDate>([\s\S]*?)<\/pubDate>/i)?.[1] || "");
+    const parsedDate = rawDate ? new Date(rawDate) : null;
+    const publishedAt = parsedDate && !Number.isNaN(parsedDate.getTime()) ? parsedDate.toISOString() : undefined;
+    output.push({ title, url, snippet: snippet.slice(0, 500), domain: domainOf(url), ...(publishedAt ? { publishedAt } : {}) });
     if (output.length >= limit) break;
   }
   return output;
@@ -228,6 +232,47 @@ async function searchOfficialFinance(query: string): Promise<WebSearchResult[]> 
   return results;
 }
 
+
+const SEARCH_STOP_WORDS = new Set([
+  "bugun","bugungi","hozir","hozirgi","paytda","nima","nimalar","bolyapti","bo'lyapti","bo‘lyapti","ayt","ber","qilib","qil","uchun","haqida","qanday","qanaqa","qachon","qayerda","necha","qancha","men","sen","siz","va","yoki","bilan","ham","bu","shu","the","and","for","from","with","what","when","where","who","why","how","is","are","was","were","in","on","at","to","of","a","an","latest","current","today","now","happening","news","tell","me","please","что","как","где","когда","почему","сейчас","сегодня","последние","новости","происходит","это","и","в","на","по","для"
+]);
+
+function searchTokens(value: string): string[] {
+  return Array.from(new Set(
+    value.toLocaleLowerCase("uz")
+      .normalize("NFD")
+      .replace(/[\u0300-\u036f]/g, "")
+      .match(/[a-zа-яёқғҳў0-9]{3,}/gi) || []
+  )).filter((token) => !SEARCH_STOP_WORDS.has(token));
+}
+
+function isBroadCurrentEventsQuery(query: string): boolean {
+  const normalized = query.toLocaleLowerCase("uz");
+  const broadIntent = /hozirgi paytda nima|nima bo['’ʻ]?lyapti|nimalar bo['’ʻ]?lyapti|bugun nima gap|dunyoda nima gap|current events|what(?:'s| is) happening|what is going on|latest news|today'?s news|последние новости|что происходит сейчас/i.test(normalized);
+  return broadIntent || (/(yangilik|news|новост|hozir|bugun|today|latest|current)/i.test(normalized) && searchTokens(normalized).length === 0);
+}
+
+const TRUSTED_NEWS_DOMAINS = [
+  "kun.uz","gazeta.uz","daryo.uz","uza.uz","uznews.uz","qalampir.uz","spot.uz","bbc.com","reuters.com","apnews.com","theguardian.com","aljazeera.com","dw.com","euronews.com","france24.com","cnn.com","bloomberg.com","ft.com","nytimes.com"
+];
+
+const NEWS_TERMS = /yangilik|xabar|news|breaking|latest|today|live|politic|government|president|election|econom|market|world|uzbekistan|o['’ʻ]?zbekiston|sport|war|conflict|technology|health|новост|событи|политик|экономик|мир|узбекистан/i;
+
+function filterRelevantResults(query: string, results: WebSearchResult[], broadNews: boolean): WebSearchResult[] {
+  const terms = searchTokens(query);
+  return results.filter((item) => {
+    const text = (item.title + " " + item.snippet + " " + item.domain).toLocaleLowerCase("uz");
+    if (broadNews) {
+      return TRUSTED_NEWS_DOMAINS.some((domain) => item.domain === domain || item.domain.endsWith("." + domain))
+        || NEWS_TERMS.test(item.title + " " + item.snippet);
+    }
+    if (terms.length === 0) return true;
+    const matches = terms.filter((term) => text.includes(term));
+    const required = terms.length <= 2 ? 1 : Math.max(1, Math.ceil(terms.length * 0.2));
+    return matches.length >= required;
+  });
+}
+
 export async function searchWeb(query: string, limit = 7): Promise<WebSearchResult[]> {
   const normalized = query.trim().replace(/\s+/g, " ").slice(0, 350);
   if (!normalized) return [];
@@ -242,14 +287,16 @@ export async function searchWeb(query: string, limit = 7): Promise<WebSearchResu
     return officialFinanceResults;
   }
 
-  const recent = /latest|breaking|today|current|recent|news|eng\s+so['’ʻ]?nggi|so['’ʻ]?nggi|oxirgi|yangilik|bugun|hozir|chiqdimi|chiqdi|chiqadimi|chiqqan|qachon\s+chiq|release\s+date|released/i.test(normalized);
-  const params = new URLSearchParams({ q: normalized });
+  const broadNews = isBroadCurrentEventsQuery(normalized);
+  const effectiveQuery = broadNews ? "O‘zbekiston va dunyo bugungi so‘nggi yangiliklar" : normalized;
+  const recent = /latest|breaking|today|current|recent|news|eng\s+so['’ʻ]?nggi|so['’ʻ]?nggi|oxirgi|yangilik|bugun|hozir|chiqdimi|chiqdi|chiqadimi|chiqqan|qachon\s+chiq|release\s+date|released/i.test(effectiveQuery);
+  const params = new URLSearchParams({ q: effectiveQuery });
   if (recent) params.set("df", "w");
 
   const providers = [
     async () => {
       const url = new URL("https://news.google.com/rss/search");
-      url.searchParams.set("q", normalized);
+      url.searchParams.set("q", effectiveQuery);
       url.searchParams.set("hl", "uz");
       url.searchParams.set("gl", "UZ");
       url.searchParams.set("ceid", "UZ:uz");
@@ -269,7 +316,7 @@ export async function searchWeb(query: string, limit = 7): Promise<WebSearchResu
     async () => {
       const url = new URL("https://www.bing.com/search");
       url.searchParams.set("format", "rss");
-      url.searchParams.set("q", normalized);
+      url.searchParams.set("q", effectiveQuery);
       const xml = await fetchText(url.toString(), "application/rss+xml,application/xml,text/xml");
       return parseBingRss(xml, limit);
     },
@@ -289,8 +336,9 @@ export async function searchWeb(query: string, limit = 7): Promise<WebSearchResu
     }
     if (merged.length >= Math.min(Math.max(limit, 1), 10)) break;
   }
-  if (merged.length) {
-    cache.set(key, { expiresAt: Date.now() + CACHE_TTL, results: merged });
+  const relevant = filterRelevantResults(effectiveQuery, merged, broadNews);
+  if (relevant.length) {
+    cache.set(key, { expiresAt: Date.now() + CACHE_TTL, results: relevant });
     if (cache.size > MAX_CACHE) cache.delete(cache.keys().next().value as string);
   } else {
     console.error(JSON.stringify({
@@ -298,5 +346,8 @@ export async function searchWeb(query: string, limit = 7): Promise<WebSearchResu
       providers: settled.map((result, index) => ({ name: ["google-news-rss", "duckduckgo-html", "duckduckgo-lite", "bing-rss"][index], status: result.status, error: result.status === "rejected" ? String(result.reason).slice(0, 180) : null })),
     }));
   }
-  return merged;
+  if (merged.length && !relevant.length) {
+    console.warn(JSON.stringify({ type: "javy_search_irrelevant_results_filtered", query: normalized, received: merged.length }));
+  }
+  return relevant;
 }
