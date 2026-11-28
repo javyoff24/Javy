@@ -125,7 +125,7 @@ export function shouldSearchWeb(message: string): boolean {
   if (!text || /^(salom|assalomu alaykum|rahmat|katta rahmat|ok|okay|xo'p|tushunarli|ha|yo'q)[!. ]*$/i.test(text)) return false;
 
   const searchIntent = /internet(?:dan|da|ga)?|\bweb(?:dan|da)?\b|sayt(?:dan|da)?|google(?:da)?|qidir\w*|qid\w*|izla\w*|izlab\s+ber|topib\s+ber|tekshir\w*|aniqla\w*|surishtir\w*|manba\w*|havola\w*|link(?:lar)?|source(?:s)?|search|look\s*up|find\s+out|verify|fact[ -]?check|research|browse|check\s+online|поищи|найди|проверь|источник\w*|ссылк\w*|поиск/i;
-  const currentInfo = /eng\s+so['’ʻ]?nggi|so['’ʻ]?nggi|oxirgi|yangilik\w*|xabar\w*|bugun|kecha|ertaga|hozir|ayni\s+payt|joriy|real[ -]?time|latest|breaking|today|yesterday|tomorrow|current|recent|this week|this month|right now|news|updates?|live|weather|forecast|ob[ -]?havo|valyuta|kursi?|exchange rate|stock price|birja|aksiyalar|narxi|narxlar|inflatsiya|statistika|reyting|ranking|natija\w*|score|standings|сегодня|вчера|завтра|последн\w*|новост\w*|курс\w*|погод\w*|цена|стоимость|рейтинг/i;
+  const currentInfo = /eng\s+so['’ʻ]?nggi|so['’ʻ]?nggi|oxirgi|yangilik\w*|xabar\w*|bugun|kecha|ertaga|hozir|ayni\s+payt|joriy|real[ -]?time|latest|breaking|today|yesterday|tomorrow|current|recent|this week|this month|right now|news|updates?|live|weather|forecast|ob[ -]?havo|valyuta|dollar|dollarning|usd|bitcoin|btc|kriptovalyuta|kripto|ethereum|kursi?|exchange rate|stock price|birja|aksiyalar|narxi|narxlar|inflatsiya|statistika|reyting|ranking|natija\w*|score|standings|сегодня|вчера|завтра|последн\w*|новост\w*|курс\w*|погод\w*|цена|стоимость|рейтинг/i;
   const factualTopic = /chiq\w*|qachon\s+chiq|chiqish\s+sanasi|rasman\s+chiq|release\s+date|released|top\s+\d+|best\s+\d+|eng\s+yaxshi|eng\s+zo['’ʻ]?r|tavsiya|recommend|review|taqqosla|solishtir|farqi|vs\.?\b|versus|ro['’ʻ]?yxat|kim\b|nima\b|qanday\b|qayer\w*|qachon\b|necha\b|qancha\b|haqida\b|ma['’ʻ]?lumot|tarix\w*|sabab\w*|foyda\w*|zarar\w*|xususiyat\w*|imkoniyat\w*|qoida\w*|qonun\w*|rasmiy\w*|kompaniya|prezident|davlat|shahar|aholi|population\b|history\b|facts\b|price\b|cost\b|specs\b|version\b|what\b|who\b|where\b|when\b|why\b|how\b|tell me about|explain\b|define\b|compare\b|recommend\b|review\b|обзор\w*|сравни\w*|разниц\w*|когда\b|почему\b|сколько\b|что\b|кто\b|где\b|как\b|истори\w*|характеристик\w*|официальн\w*|дата\s+выхода/i;
 
   return searchIntent.test(text) || currentInfo.test(text) || factualTopic.test(text) || /202[4-9]|20[3-9]\d/.test(text) || /[?؟]/.test(text);
@@ -224,7 +224,7 @@ export async function searchWeb(query: string, limit = 7): Promise<WebSearchResu
   } else {
     console.error(JSON.stringify({
       type: "javy_search_empty",
-      providers: settled.map((result, index) => ({ name: ["duckduckgo-html", "duckduckgo-lite", "bing-rss"][index], status: result.status, error: result.status === "rejected" ? String(result.reason).slice(0, 180) : null })),
+      providers: settled.map((result, index) => ({ name: ["google-news-rss", "duckduckgo-html", "duckduckgo-lite", "bing-rss"][index], status: result.status, error: result.status === "rejected" ? String(result.reason).slice(0, 180) : null })),
     }));
   }
   return merged;
