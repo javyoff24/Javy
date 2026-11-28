@@ -95,7 +95,7 @@ export const POST = monitoredApi("POST /api/chat", async (request, requestId) =>
   const explicitSearchIntent = /internet|web search|search the web|qidir\\w*|qid\\w*|izla\\w*|topib\\s*ber|qidirib\\s*ber/i.test(lastText);
   const previousTopic = [...userMessages.slice(0, -1)].reverse().find((message: any) => {
     const candidate = String(message.content || "").trim();
-    return candidate.length > 8 && !/^(qidir(?:ib)?|qidirib\\s*ber|qidirib\\s*ko['’ʻ]?r|ko['’ʻ]?r|topib\\s*ber|search|look\\s*it\\s*up|поищи|найди)[!.? ]*$/i.test(candidate);
+    return candidate.length > 8 && !/^(qidir(?:ib)?|qidirib\\s*ber|qidirib\\s*ko['’ʻ]?r|ko['’ʻ]?r|topib\\s*ber|search|look\\s*it\\s*up|поищи|найди)[!.? ]*$/i.test(candidate) && !/(nega|why).{0,35}(qidir|search)|(qidiruv|search).{0,35}(ishlama|ishlamay|fail|error|nega)/i.test(candidate);
   });
   const inheritedTopic = previousTopic ? String(previousTopic.content).trim() : "";
   const inheritsSearchTopic = Boolean(isGenericSearchFollowUp && inheritedTopic);
