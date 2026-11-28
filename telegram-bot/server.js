@@ -515,6 +515,20 @@ server.listen(PORT, "0.0.0.0", async () => {
     await loadAutomation();
     const me = await telegram("getMe", {});
     botUsername = me.username || "";
+    await telegram("setMyCommands", {
+      commands: [
+        { command: "start", description: "Botni boshlash" },
+        { command: "automation", description: "Avtomatlashtirish sozlamalari" },
+        { command: "setname", description: "Bot nomini o'zgartirish" },
+        { command: "setbio", description: "Bot bio matnini o'zgartirish" },
+        { command: "status", description: "Automation holatini ko'rish" },
+        { command: "profile", description: "Profil ma'lumotlari" },
+        { command: "time", description: "Toshkent vaqti" },
+        { command: "motivation", description: "Bugungi motivatsiya" },
+        { command: "countdown", description: "Yangi yil sanagichi" },
+        { command: "help", description: "Yordam" },
+      ],
+    });
     const result = await telegram("setWebhook", {
       url: `${publicUrl}/telegram/webhook`,
       secret_token: WEBHOOK_SECRET,
