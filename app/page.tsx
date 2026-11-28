@@ -17,7 +17,7 @@ type Chat = { id: string; title: string; messages: Message[]; updatedAt: number 
 const DEFAULT_PROMPT = "Sen Javy'san, foydalanuvchi qaysi tilda yozsa, shu tilda (ayniqsa o'zbek tilida) aniq va do'stona javob ber";
 const MODELS = ["openai/gpt-oss-120b","openai/gpt-oss-20b"];
 const uid = () => Math.random().toString(36).slice(2, 10);
-const isImageFile = (file: { name: string; type: string }) => file.type.startsWith("image/") || /\\.(png|jpe?g|webp)$/i.test(file.name);
+const isImageFile = (file: { name: string; type: string }) => file.type.startsWith("image/") || /\.(png|jpe?g|webp)$/i.test(file.name);
 const suggestions = ["Next.js nima va u qanday ishlaydi?","Menga haftalik o'qish rejasini tuzib ber","Python'da oddiy kalkulyator yoz","Sun'iy intellektni sodda tushuntir"];
 
 function cleanAssistantText(value: string) {
