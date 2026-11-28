@@ -110,9 +110,10 @@ export const POST = monitoredApi("POST /api/chat", async (request, requestId) =>
   let imageResults: Awaited<ReturnType<typeof searchImages>> = [];
   let searchFailed = false;
   if (searchRequested) {
+    const imageSearchRequested = /rasm|surat|photo|image|picture|top\\s+\\d+|eng\\s+yaxshi|tavsiya|recommend|game|o['’ʻ]?yin|telefon|laptop|noutbuk|product|mahsulot/i.test(searchQuery);
     const [webResult, imageResult] = await Promise.allSettled([
       searchWeb(searchQuery, 7),
-      searchImages(searchQuery, 8),
+      imageSearchRequested ? searchImages(searchQuery, 8) : Promise.resolve([]),
     ]);
     if (webResult.status === "fulfilled") searchResults = webResult.value;
     else console.error(JSON.stringify({ type: "javy_search_error", requestId, provider: "duckduckgo", error: webResult.reason instanceof Error ? webResult.reason.message : String(webResult.reason) }));
