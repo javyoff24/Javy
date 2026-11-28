@@ -72,8 +72,46 @@ export const POST = monitoredApi("POST /api/chat", async (request, requestId) =>
       if (inferredMime.startsWith("image/") && ["image/jpeg","image/png","image/webp"].includes(inferredMime)) {
         imageParts.push({ type: "image_url", image_url: { url: `data:${inferredMime};base64,${match[2]}` } });
       } else if (mime === "application/pdf" || extension === "pdf") {
-        const parsed = await pdf(buffer);
-        const extracted = String(parsed?.text || "").trim();
+        let extracted = "";
+        let primaryError: unknown = null;
+        try {
+          const parsed = await pdf(buffer);
+          extracted = String(parsed?.text || "").trim();
+        } catch (error) {
+          primaryError = error;
+        }
+        // Retry malformed cross-reference tables with the newer PDF.js parser.
+        if (!extracted) {
+          try {
+            const pdfjs = await import("pdfjs-dist/legacy/build/pdf.mjs");
+            const loadingTask = pdfjs.getDocument({
+              data: new Uint8Array(buffer),
+              useSystemFonts: true,
+              stopAtErrors: false,
+              isEvalSupported: false,
+              verbosity: 0,
+            });
+            const document = await loadingTask.promise;
+            const pageTexts: string[] = [];
+            for (let pageNumber = 1; pageNumber <= document.numPages; pageNumber++) {
+              const page = await document.getPage(pageNumber);
+              const pageContent = await page.getTextContent();
+              pageTexts.push(pageContent.items
+                .map((item: any) => typeof item.str === "string" ? item.str : "")
+                .filter(Boolean)
+                .join(" "));
+            }
+            extracted = pageTexts.join("\n").trim();
+            await document.destroy();
+          } catch (fallbackError) {
+            console.error(JSON.stringify({
+              type: "javy_pdf_parse_error",
+              primary: primaryError instanceof Error ? primaryError.message.slice(0, 180) : String(primaryError || ""),
+              fallback: fallbackError instanceof Error ? fallbackError.message.slice(0, 180) : String(fallbackError),
+            }));
+            throw new Error("PDF fayl tuzilishi buzilgan yoki noto‘g‘ri saqlangan. Uni qayta PDF qilib saqlang va yana yuklang.");
+          }
+        }
         if (!extracted) throw new Error("PDF ichidan matn topilmadi. Bu skanerlangan rasmli PDF bo‘lishi mumkin; hozircha matnli PDF yuklang.");
         documentContext += "\n\nPDF: " + file.name + "\n" + extracted.slice(0, 80_000);
       } else if (extension === "docx" || mime === "application/vnd.openxmlformats-officedocument.wordprocessingml.document") {
