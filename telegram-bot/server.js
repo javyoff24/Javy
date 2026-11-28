@@ -54,7 +54,10 @@ async function telegram(method, payload) {
 function mainKeyboard() {
   return {
     keyboard: [
-      [{ text: "👤 Profil" }, { text: "🕒 Vaqt" }],\n      [{ text: "⚙️ Automation" }, { text: "💡 Motivatsiya" }],\n      [{ text: "🎯 Sanagich" }, { text: "📊 Status" }],\n      [{ text: "❓ Yordam" }, { text: "🤖 Javy haqida" }],
+      [{ text: "👤 Profil" }, { text: "🕒 Vaqt" }],
+      [{ text: "⚙️ Automation" }, { text: "💡 Motivatsiya" }],
+      [{ text: "🎯 Sanagich" }, { text: "📊 Status" }],
+      [{ text: "❓ Yordam" }, { text: "🤖 Javy haqida" }],
     ],
     resize_keyboard: true,
     is_persistent: true,
