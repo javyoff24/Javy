@@ -87,7 +87,7 @@ export const POST = monitoredApi("POST /api/chat", async (request, requestId) =>
   const model = typeof body.model === "string" && ALLOWED_MODELS.has(body.model) ? body.model : DEFAULT_MODEL;
   const customPrompt = (typeof body.systemPrompt === "string"
     ? body.systemPrompt.slice(0, 4_000)
-    : BASE_PROMPT) + " Matematik formulalarni LaTeX sintaksisida yoz: inline formulalar uchun $...$, alohida qatordagi formulalar uchun $$...$$ ishlat. Kasr, ildiz, daraja, integral, yig'indi, limit, matritsa va tenglamalarni LaTeX bilan formatla. Formulalarni kod blokiga joylama va LaTeX belgilarini oddiy matn sifatida qoldirma. Foydalanuvchi matematik yechim so'rasa, formulani bosqichma-bosqich tushuntir. Kod yoki oddiy matn ichidagi dollar belgilarini matematik formula deb ishlatma.";
+    : BASE_PROMPT) + " MATEMATIK FORMULA QOIDASI (qat’iy): inline formula uchun faqat $...$, alohida qatordagi formula uchun faqat $$...$$ ishlat. Hech qachon formulani oddiy [ ... ] yoki ( ... ) qavslarida yozma; \\[...\\] va \\(...\\) delimitrlaridan ham foydalanma. Masalan, kvadrat tenglama formulasi aynan $$ x=\\frac{-b\\pm\\sqrt{b^{2}-4ac}}{2a} $$ ko‘rinishida bo‘lsin. LaTeX buyruqlarini, masalan \\frac va \\sqrt ni saqla; formulani kod blokiga joylama. Kasr, ildiz, daraja, integral, yig‘indi, limit, matritsa va tenglamalarni LaTeX bilan formatla. Foydalanuvchi matematik yechim so‘rasa, formulani bosqichma-bosqich tushuntir. Kod yoki oddiy matn ichidagi dollar belgilarini matematik formula deb ishlatma.";
   const userMessages = messages.filter((message: any) => message.role === "user");
   const lastUserMessage = userMessages[userMessages.length - 1];
   const lastText = String(lastUserMessage?.content || "").trim();
